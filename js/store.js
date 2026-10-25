@@ -1,6 +1,7 @@
 // The saved data (spec §4.5): its shape, repairing a damaged file, merging in
 // what's in OneDrive, and saving shortly after each change.
 import { COLORS } from './colors.js';
+import { DIARY_KINDS } from './habits.js';
 import { CATEGORIES, OCCASIONS, STYLES, TEMPERATURES, WARMTHS } from './rules.js';
 import { SETTINGS } from './settings.js';
 
@@ -15,6 +16,7 @@ export function emptyData() {
     items: {},
     pairScores: {},
     outfitPenalties: {},
+    diary: [],
     settings: { occasion: 'everyday', temperature: 'mild', somethingDifferent: false },
   };
 }
@@ -24,6 +26,17 @@ function numbersOnly(raw) {
   if (!isObject(raw)) return out;
   for (const [key, value] of Object.entries(raw)) if (Number.isFinite(value)) out[key] = value;
   return out;
+}
+
+// Keeps the diary lines that make sense, newest last, at most diaryMax of them.
+function diaryLines(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((line) => isObject(line) && isDate(line.date) && DIARY_KINDS.includes(line.kind)
+      && OCCASIONS.includes(line.occasion) && Array.isArray(line.ids) && line.ids.length > 0
+      && line.ids.every((id) => typeof id === 'string'))
+    .map(({ date, kind, occasion, ids }) => ({ date, kind, occasion, ids: [...ids] }))
+    .slice(-SETTINGS.habits.diaryMax);
 }
 
 function readRaw(text) {
@@ -65,6 +78,7 @@ export function parseData(text) {
   }
   data.pairScores = numbersOnly(raw.pairScores);
   data.outfitPenalties = numbersOnly(raw.outfitPenalties);
+  data.diary = diaryLines(raw.diary);
   const settings = isObject(raw.settings) ? raw.settings : {};
   data.settings = {
     occasion: oneOf(OCCASIONS, settings.occasion, data.settings.occasion),

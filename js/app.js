@@ -4,6 +4,7 @@ import { detectImageColor } from './colors.js';
 import { todayISO } from './dates.js';
 import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
+import { learnHabits, styleSummary } from './habits.js';
 import { createGraph, GraphError } from './onedrive.js';
 import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
@@ -53,7 +54,13 @@ const state = {
 // ----- Outfits -----
 
 function pickOptions(extra = {}) {
-  return { ...state.data.settings, today: todayISO(), ...extra };
+  const today = todayISO();
+  return { ...state.data.settings, today, habits: learnHabits(state.data, today), ...extra };
+}
+
+// The day and occasion of a 👍, 👎 or Wore this, for the diary.
+function choiceDay() {
+  return { today: todayISO(), occasion: state.data.settings.occasion };
 }
 
 function recompute(extra) {
@@ -90,14 +97,14 @@ const homeActions = {
     render();
   },
   like(i) {
-    like(state.data, state.cards[i].outfit);
+    like(state.data, state.cards[i].outfit, choiceDay());
     state.cards[i].liked = true;
     changed();
     render();
   },
   dislike(i) {
     const disliked = state.cards[i].outfit;
-    dislike(state.data, disliked);
+    dislike(state.data, disliked, choiceDay());
     const others = state.cards.filter((_, j) => j !== i);
     const [next] = pickOutfits(labeledItems(state.data), state.data, pickOptions({
       exclude: [disliked.key, ...others.map((c) => c.outfit.key)],
@@ -111,7 +118,7 @@ const homeActions = {
     render();
   },
   wore(i) {
-    woreThis(state.data, state.cards[i].outfit, todayISO());
+    woreThis(state.data, state.cards[i].outfit, choiceDay());
     state.cards[i].worn = true;
     changed();
     render();
@@ -316,6 +323,7 @@ function renderWardrobeScreen() {
     photoUrl: (id) => state.source.photoUrl(id),
     canRefresh: state.source.mode === 'onedrive',
     refreshing: state.refreshing,
+    style: styleSummary(learnHabits(state.data, todayISO())),
   }, wardrobeActions);
 }
 

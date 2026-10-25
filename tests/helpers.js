@@ -9,5 +9,5 @@ export function outfitOf(...items) {
 }
 
 export function blankData() {
-  return { version: 1, items: {}, pairScores: {}, outfitPenalties: {}, settings: {} };
+  return { version: 1, items: {}, pairScores: {}, outfitPenalties: {}, diary: [], settings: {} };
 }

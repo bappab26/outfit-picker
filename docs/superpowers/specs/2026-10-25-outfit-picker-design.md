@@ -179,6 +179,8 @@ outfit (an outfit of 4 pieces has 6 pairs).
 
 **Randomness:** a random value between 0 and 1.5 is added, so Shuffle gives new picks.
 
+**Her habits** (§3.6) add up to ±6 more points.
+
 ### 3.5 Step 4: pick 3
 
 - Sort outfits by score, highest first.
@@ -188,6 +190,35 @@ outfit (an outfit of 4 pieces has 6 pairs).
 - If no outfit is possible, show what's missing, for example "Add some shoes" or
   "Add at least one top and one pair of pants or skirt, or a dress".
 - If only 1 or 2 outfits are possible, show those.
+
+### 3.6 Her habits (added after the first version)
+
+Every 👍, 👎 and Wore this also adds a line to a **diary**: the date, which tap, the occasion
+and the pieces. The diary keeps her latest 500 choices. The app counts it to learn four habits,
+using the pieces' labels as they are now:
+
+- **Color combinations:** every pair of colors in the outfit (two black pieces make black + black).
+- **Favorite colors:** every color in the outfit.
+- **Shape per occasion:** the outfit's dress, skirt or pants. On a yes, the other two shapes
+  count as a no for that occasion.
+- **How dressed-up:** the styles of the main pieces, where the occasion allows two styles
+  (Everyday, Evening out, At home). On a yes, the other allowed style counts as a no.
+
+Wore this and 👍 count as yes, 👎 as no. A choice counts half after 60 days, a quarter after
+120, and so on. Each habit's score is (yes − no) / (yes + no + 4), from −1 to +1.
+
+Points per outfit (averages, so an extra piece like a coat doesn't add points by itself):
+
+| Habit | Points |
+|---|---|
+| Color combinations | 2 × the average over its pairs |
+| Favorite colors | 1 × the average over its pieces |
+| Shape per occasion | 2 × the score of its shape |
+| How dressed-up | 1 × the average over its main pieces |
+
+The Wardrobe screen shows **Your style so far** once she has made 5 choices: the two
+strongest color combinations and colors, and per occasion the shape and style she mostly
+picks (habits scoring 0.3 or more).
 
 ## 4. How it's built
 
@@ -262,6 +293,7 @@ Microsoft names this folder after the app registration).
   },
   "pairScores": { "<id A>|<id B>": 1.5 },
   "outfitPenalties": { "<id A>|<id B>|<id C>": -5 },
+  "diary": [{ "date": "2026-10-25", "kind": "wore", "occasion": "work", "ids": ["<id A>", "<id B>", "<id C>"] }],
   "settings": { "occasion": "everyday", "temperature": "mild", "somethingDifferent": false }
 }
 ```
@@ -270,6 +302,7 @@ Microsoft names this folder after the app registration).
 - `warmth` and `style` are `null` until she labels the piece.
 - IDs inside the keys of `pairScores` and `outfitPenalties` are sorted, so the same pair or
   outfit always gets the same key.
+- `diary` lists her taps oldest first (`kind` is `wore`, `like` or `dislike`), at most 500 (§3.6).
 - The file is saved about 1 second after each change. Last save wins (one person, so
   conflicts are not expected).
 - If the file is missing or unreadable, the app starts with empty data; photos are found
@@ -293,6 +326,7 @@ js/store.js              Load and save data; merge with the OneDrive listing
 js/colors.js             Color list, color wheel, naming a pixel, detecting a photo's color
 js/rules.js              Build, filter, score and pick outfits
 js/feedback.js           Apply 👍, 👎 and Wore this to the data
+js/habits.js             Learn her habits from the diary (section 3.6)
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen

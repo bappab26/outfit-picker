@@ -4,7 +4,8 @@ import { SAMPLE_ITEMS, sampleData, drawItem } from '../js/sample.js';
 import { createSampleSource } from '../js/sources.js';
 import { pickOutfits, OCCASIONS, TEMPERATURES, CATEGORIES, STYLES, WARMTHS } from '../js/rules.js';
 import { BOLDS, SWATCHES } from '../js/colors.js';
-import { labeledItems } from '../js/store.js';
+import { labeledItems, parseData } from '../js/store.js';
+import { learnHabits, styleSummary } from '../js/habits.js';
 
 const today = '2026-10-25';
 const fakeStorage = () => {
@@ -38,6 +39,17 @@ test('the sample has recent, long-unworn and never-worn pieces', () => {
   assert.ok(items.some((i) => i.lastWorn === '2026-10-24' || i.lastWorn === '2026-10-23'));
   assert.ok(items.some((i) => i.lastWorn && i.lastWorn <= '2026-09-15'));
   assert.ok(items.some((i) => i.lastWorn === null));
+});
+
+test('the sample diary uses sample pieces and shows a style', () => {
+  const data = sampleData(today);
+  assert.ok(data.diary.length >= 10);
+  for (const line of data.diary) for (const id of line.ids) assert.ok(data.items[id], id);
+  assert.deepEqual(parseData(JSON.stringify(data)).diary, data.diary);
+  const summary = styleSummary(learnHabits(data, today));
+  assert.deepEqual(summary.together[0], ['black', 'pink']);
+  assert.equal(summary.shapes.evening, 'dress');
+  assert.equal(summary.dressedUp.everyday, 'casual');
 });
 
 test('drawItem returns an SVG in the piece color', () => {

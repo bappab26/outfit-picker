@@ -25,7 +25,10 @@ export const ALLOWED_STYLES = {
 const OUTERWEAR_WARMTHS = { cold: ['medium', 'warm'], mild: ['light', 'medium'], hot: [] };
 
 // Pieces that must match the occasion exactly; shoes and outerwear may be one step off.
-const MAIN_PIECES = ['tops', 'pants', 'skirts', 'dresses'];
+export const MAIN_PIECES = ['tops', 'pants', 'skirts', 'dresses'];
+
+// An outfit's shape, for learning her habits (spec §3.6).
+export const SHAPE_OF = { dresses: 'dress', skirts: 'skirt', pants: 'pants' };
 
 export function fitsStyle(item, occasion) {
   const allowed = ALLOWED_STYLES[occasion];
@@ -121,34 +124,62 @@ function pieceFreshness(item, today, somethingDifferent) {
   return points;
 }
 
-// Spec §3.4: colors and taste per pair, the outfit's own penalty, freshness per piece, a little randomness.
-// Works out everything that depends only on pieces once, so scoring each of 100,000+
-// candidates is just table lookups. Requires pieces[i].index === i.
-function makeScorer(pieces, data, { today, somethingDifferent, rng }) {
+const NO_HABITS = { colorPairs: {}, colors: {}, shape: {}, dressedUp: {} };
+
+// Spec §3.4: colors and taste per pair, the outfit's own penalty, freshness per piece, a little randomness,
+// and her habits (§3.6) from learnHabits(). Works out everything that depends only on pieces once,
+// so scoring each of 100,000+ candidates is just table lookups. Requires pieces[i].index === i.
+function makeScorer(pieces, data, { today, somethingDifferent, rng, habits = null, occasion }) {
+  const points = SETTINGS.habits.points;
+  const learned = habits ?? NO_HABITS;
   const n = pieces.length;
   const pairs = new Float64Array(n * n);
+  const pairHabits = new Float64Array(n * n);
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const a = pieces[i];
       const b = pieces[j];
       const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`; // same format as pairKeys()
-      const points = pairColorPoints(a.color, b.color) + (data.pairScores[key] ?? 0);
-      pairs[i * n + j] = points;
-      pairs[j * n + i] = points;
+      const colorKey = a.color < b.color ? `${a.color}|${b.color}` : `${b.color}|${a.color}`; // same as colorPairKey()
+      pairs[i * n + j] = pairs[j * n + i] = pairColorPoints(a.color, b.color) + (data.pairScores[key] ?? 0);
+      pairHabits[i * n + j] = pairHabits[j * n + i] = learned.colorPairs[colorKey] ?? 0;
     }
   }
   const fresh = pieces.map((p) => pieceFreshness(p, today, somethingDifferent));
+  const shapeHabits = learned.shape[occasion] ?? {};
+  const styleHabits = learned.dressedUp[occasion] ?? {};
+  // Every outfit has exactly one dress, skirt or pants, so shape points add up per piece.
+  const shapePoints = pieces.map((p) => points.shape * (shapeHabits[SHAPE_OF[p.category]] ?? 0));
+  const colorHabits = pieces.map((p) => learned.colors[p.color] ?? 0);
+  const isMain = pieces.map((p) => MAIN_PIECES.includes(p.category));
+  const styleHabitsOf = pieces.map((p) => styleHabits[p.style] ?? 0);
   // Only outfits made entirely of disliked-outfit pieces can have a penalty.
   const penalized = new Set(Object.keys(data.outfitPenalties).flatMap((key) => key.split('|')));
 
   return (outfit) => {
     const ps = outfit.items;
     let score = 0;
+    // Habits are averaged over pairs and pieces, so an outfit doesn't gain just by having a coat.
+    let pairHabit = 0;
+    let colorHabit = 0;
+    let styleHabit = 0;
+    let mains = 0;
     for (let i = 0; i < ps.length; i++) {
       const a = ps[i].index;
-      score += fresh[a];
-      for (let j = i + 1; j < ps.length; j++) score += pairs[a * n + ps[j].index];
+      score += fresh[a] + shapePoints[a];
+      colorHabit += colorHabits[a];
+      if (isMain[a]) {
+        styleHabit += styleHabitsOf[a];
+        mains += 1;
+      }
+      for (let j = i + 1; j < ps.length; j++) {
+        score += pairs[a * n + ps[j].index];
+        pairHabit += pairHabits[a * n + ps[j].index];
+      }
     }
+    score += (points.colorPairs * pairHabit) / ((ps.length * (ps.length - 1)) / 2);
+    score += (points.colors * colorHabit) / ps.length;
+    if (mains) score += (points.dressedUp * styleHabit) / mains;
     if (penalized.size && ps.every((p) => penalized.has(p.id))) score += data.outfitPenalties[outfit.key] ?? 0;
     return score + rng() * SETTINGS.randomMax;
   };
@@ -164,7 +195,7 @@ export function scoreOutfit(outfit, data, options) {
 // The best `count` outfits, sharing no piece. `exclude` holds keys of outfits already
 // on screen (Shuffle); they come back only when nothing else is left.
 export function pickOutfits(items, data, {
-  occasion, temperature, somethingDifferent = false, today, rng = Math.random,
+  occasion, temperature, somethingDifferent = false, today, rng = Math.random, habits = null,
   exclude = [], avoidItemIds = [], count = SETTINGS.suggestions,
 }) {
   const pieces = withIndexes(items);
@@ -181,7 +212,7 @@ export function pickOutfits(items, data, {
   const avoid = new Set(avoidItemIds);
   if (avoid.size) candidates = candidates.filter((o) => !o.items.some((i) => avoid.has(i.id)));
 
-  const score = makeScorer(pieces, data, { today, somethingDifferent, rng });
+  const score = makeScorer(pieces, data, { today, somethingDifferent, rng, habits, occasion });
   const ranked = candidates
     .map((outfit) => ({ outfit, score: score(outfit) }))
     .sort((a, b) => b.score - a.score);

@@ -2,8 +2,10 @@
 import { SWATCHES } from './colors.js';
 import { emptyData } from './store.js';
 
+const sampleId = (n) => `sample-${String(n).padStart(2, '0')}`;
+
 const piece = (n, category, fileName, color, warmth, style) => ({
-  id: `sample-${String(n).padStart(2, '0')}`,
+  id: sampleId(n),
   category, fileName, color, warmth, style,
   addedAt: '2026-01-01', lastWorn: null, wearCount: 0,
 });
@@ -45,6 +47,29 @@ export const SAMPLE_ITEMS = [
   piece(33, 'outerwear', 'Cozy cardigan', 'brown', 'medium', 'cozy'),
 ];
 
+// A made-up diary, oldest first: pink with black, casual pants outfits every day and
+// dresses for evenings out, so the learned habits and "Your style so far" show (spec §3.6).
+// [days ago, tap, occasion, piece numbers]
+const SAMPLE_DIARY = [
+  [27, 'wore', 'evening', [16, 21, 27]],
+  [24, 'wore', 'everyday', [7, 12, 24]],
+  [21, 'wore', 'work', [3, 9, 22]],
+  [20, 'wore', 'evening', [17, 21]],
+  [18, 'dislike', 'everyday', [2, 10, 20]],
+  [16, 'like', 'everyday', [6, 12, 24]],
+  [15, 'dislike', 'evening', [1, 9, 20]],
+  [14, 'like', 'work', [4, 13, 20]],
+  [13, 'wore', 'everyday', [7, 11, 19]],
+  [11, 'like', 'evening', [16, 19]],
+  [9, 'wore', 'everyday', [5, 11, 23]],
+  [7, 'wore', 'work', [1, 13, 22]],
+  [6, 'wore', 'everyday', [7, 12, 22]],
+  [4, 'wore', 'evening', [15, 19]],
+  [3, 'wore', 'everyday', [7, 9, 23]],
+  [2, 'wore', 'everyday', [7, 11, 22]],
+  [2, 'like', 'everyday', [7, 11, 22]],
+];
+
 function daysBefore(iso, n) {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d - n)).toISOString().slice(0, 10);
@@ -62,6 +87,8 @@ export function sampleData(today) {
     ][i % 3];
     data.items[id] = { ...item, ...history };
   });
+  data.diary = SAMPLE_DIARY.map(([daysAgo, kind, occasion, pieces]) => (
+    { date: daysBefore(today, daysAgo), kind, occasion, ids: pieces.map(sampleId) }));
   return data;
 }
 

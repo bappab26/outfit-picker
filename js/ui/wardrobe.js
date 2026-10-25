@@ -1,8 +1,9 @@
 // Wardrobe screen: every piece, grouped by OneDrive folder (spec §2).
 import { SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
+import { OCCASIONS } from '../rules.js';
 import { append, h, photo, swatch } from './dom.js';
-import { STYLE_LABELS, WARMTH_LABELS } from './labels.js';
+import { colorLabel, OCCASION_LABELS, SHAPE_LABELS, STYLE_LABELS, WARMTH_LABELS } from './labels.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -24,6 +25,31 @@ function tile(item, view, actions) {
     h('span', { class: 'tile-sub' }, lastWornText(item.lastWorn)));
 }
 
+// "Your style so far" (spec §3.6): the habits learned from her choices, from styleSummary().
+function styleLines(style) {
+  const lines = [];
+  if (style.together.length) {
+    lines.push(`Often together: ${style.together.map((pair) => pair.map(colorLabel).join(' + ')).join(', ')}`);
+  }
+  if (style.colors.length) lines.push(`Favorite colors: ${style.colors.map(colorLabel).join(', ')}`);
+  for (const occasion of OCCASIONS) {
+    const parts = [];
+    if (style.shapes[occasion]) parts.push(`mostly ${SHAPE_LABELS[style.shapes[occasion]]}`);
+    if (style.dressedUp[occasion]) parts.push(STYLE_LABELS[style.dressedUp[occasion]]);
+    if (parts.length) lines.push(`${OCCASION_LABELS[occasion]}: ${parts.join(', ')}`);
+  }
+  return lines;
+}
+
+function styleBox(style) {
+  const lines = styleLines(style);
+  return h('section', { class: 'style-box' },
+    h('h2', {}, 'Your style so far'),
+    lines.length
+      ? h('ul', {}, lines.map((line) => h('li', {}, line)))
+      : h('p', { class: 'hint' }, 'Still learning. Keep tapping Wore this, 👍 and 👎.'));
+}
+
 export function renderWardrobe(root, view, actions) {
   append(root,
     h('header', { class: 'topbar' },
@@ -34,6 +60,7 @@ export function renderWardrobe(root, view, actions) {
           view.refreshing ? 'Refreshing…' : 'Refresh')
         : h('span', { class: 'topbar-spacer' })),
     !view.items.length && h('p', { class: 'hint' }, 'No pieces yet.'),
+    view.style && styleBox(view.style),
     Object.entries(FOLDERS).map(([folder, category]) => {
       const items = view.items.filter((i) => i.category === category);
       if (!items.length) return null;

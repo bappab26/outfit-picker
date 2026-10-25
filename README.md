@@ -8,6 +8,8 @@ Occasions use these styles: Everyday (Casual, Smart), Work (Smart), Evening out 
 Dressy), Special event (Dressy) and At home (Cozy, Casual). Cozy shoes and outerwear are
 only suggested at home, and at home a coat is never required.
 
+The app also learns her style from what she taps (see "How it learns her style" below).
+
 (The Microsoft app registration below is still called "Outfit Picker", which is why the
 data folder in OneDrive is `Apps/Outfit Picker`. Renaming the registration isn't needed.)
 
@@ -127,7 +129,10 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
 - **Automated checks:** `npm test` runs every check of the outfit rules, data handling and
   OneDrive calls. All should pass.
 - **Sample mode:** open the app and tap **Try with sample clothes**. It loads about 30 drawn
-  pieces, no sign-in needed, so you can try the rules. Tap **Exit** to leave.
+  pieces, no sign-in needed, so you can try the rules. It comes with a made-up month of
+  choices (pink with black, casual pants outfits, dresses for evenings out), so
+  **Wardrobe → Your style so far** shows something and the picks lean that way. Tap **Exit**
+  to leave.
 - **Your own account:** tap **Sign in with Microsoft** and sign in with your own Microsoft
   account. The app creates `Wardrobe` and its six folders in *your* OneDrive. Add a few
   photos, tap **Refresh** on the Wardrobe screen, label them and check the outfits.
@@ -162,18 +167,39 @@ If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm te
    - One piece per photo, on a plain background.
    - Then open the app and label the new pieces (two taps each).
 
+## How it learns her style
+
+Every **Wore this**, 👍 and 👎 adds a line to a diary in her data file (her latest 500
+choices). From it the app learns four habits by plain counting, no AI:
+
+- **Color combinations** she wears together, like black with pink.
+- **Favorite colors.**
+- **Shape per occasion:** dress, skirt or pants, for example mostly dresses for evenings out.
+- **How dressed-up:** Casual or Smart for Everyday, Smart or Dressy for Evening out, and so on.
+
+Wore this and 👍 count as a yes, 👎 as a no. Recent choices count more: a choice from two
+months ago counts half. The habits only nudge the picks, about as much as the color rules:
+pieces worn in the last 3 days still step aside, and **Something different** still brings
+back forgotten ones. A new piece benefits right away, because habits are about colors and
+shapes, not single pieces.
+
+After about 5 choices, **Wardrobe** shows **Your style so far**, for example
+"Often together: Black + Pink" or "Evening out: mostly dresses, Dressy". It's the easiest way
+to check that it's learning.
+
 ## Adjust the rules
 
 Every number the rules use is in `js/settings.js`, with a note on what it does. For
 example, `recentDays: 3` is how long a piece counts as "just worn", and
 `forgottenDays: 30` is how long until a piece counts as forgotten for
-**Something different**. Run `npm test` after a change: some checks use these values, so
+**Something different**. The `habits` numbers set how fast and how strongly it learns
+her style. Run `npm test` after a change: some checks use these values, so
 a failing check after a deliberate change means that check needs updating too.
 
 ## Start over
 
 Delete `Apps/Outfit Picker/data.json` in her OneDrive. The app then finds all the photos
-again as unlabeled pieces. Her photos are never changed or deleted by the app.
+again as unlabeled pieces, and forgets her habits. Her photos are never changed or deleted by the app.
 
 If `data.json` ever gets damaged (for example by editing it by hand), the app saves a copy
 named `data-backup-<date>.json` next to it before starting fresh. OneDrive's own version

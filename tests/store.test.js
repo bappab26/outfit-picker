@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { SETTINGS } from '../js/settings.js';
 import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver } from '../js/store.js';
 
 const entry = (id, category = 'tops', fileName = `${id}.jpg`) => ({ id, category, fileName, thumbUrl: null });
@@ -7,7 +8,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('emptyData has the spec shape and defaults', () => {
   assert.deepEqual(emptyData(), {
-    version: 1, items: {}, pairScores: {}, outfitPenalties: {},
+    version: 1, items: {}, pairScores: {}, outfitPenalties: {}, diary: [],
     settings: { occasion: 'everyday', temperature: 'mild', somethingDifferent: false },
   });
 });
@@ -130,4 +131,32 @@ test('parseData keeps the Cozy style and the At home occasion', () => {
   }));
   assert.equal(data.items.a.style, 'cozy');
   assert.equal(data.settings.occasion, 'home');
+});
+
+test('parseData keeps good diary lines and drops damaged ones', () => {
+  const good = { date: '2026-10-20', kind: 'wore', occasion: 'work', ids: ['a', 'b'] };
+  const data = parseData(JSON.stringify({
+    version: 1,
+    items: {},
+    diary: [
+      good,
+      { ...good, date: 'yesterday' },
+      { ...good, kind: 'loved' },
+      { ...good, occasion: 'party' },
+      { ...good, ids: [] },
+      { ...good, ids: ['a', 3] },
+      'not a line',
+      { ...good, kind: 'dislike', extra: 'dropped' },
+    ],
+  }));
+  assert.deepEqual(data.diary, [good, { ...good, kind: 'dislike' }]);
+  assert.deepEqual(parseData(JSON.stringify({ version: 1, diary: 'lots' })).diary, []);
+});
+
+test('parseData keeps only the latest diary lines', () => {
+  const max = SETTINGS.habits.diaryMax;
+  const diary = Array.from({ length: max + 3 }, (_, i) => ({ date: '2026-10-20', kind: 'like', occasion: 'work', ids: [`p${i}`] }));
+  const data = parseData(JSON.stringify({ version: 1, diary }));
+  assert.equal(data.diary.length, max);
+  assert.deepEqual(data.diary[0].ids, ['p3']);
 });

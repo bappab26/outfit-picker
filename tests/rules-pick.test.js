@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { scoreOutfit, pickOutfits } from '../js/rules.js';
 import { COLORS } from '../js/colors.js';
+import { learnHabits } from '../js/habits.js';
+import { SETTINGS } from '../js/settings.js';
 import { makeItem as m, outfitOf, blankData } from './helpers.js';
 
 const today = '2026-10-25';
@@ -34,6 +36,44 @@ test('something different adds 4 per forgotten piece', () => {
 
 test('randomness adds rng() × 1.5', () => {
   assert.equal(score(base(), blankData(), { rng: () => 0.5 }), 5.75);
+});
+
+// Her habits, as learnHabits() returns them: scores from -1 to +1.
+const habitsOf = ({ colorPairs = {}, colors = {}, shape = {}, dressedUp = {} }) => ({ choices: 10, colorPairs, colors, shape, dressedUp });
+
+test('habits add points for color pairs, colors, shape and how dressed-up', () => {
+  const habits = habitsOf({
+    colorPairs: { 'green|red': 1, 'black|green': 0.5 }, // average over 3 pairs 0.5, × 2
+    colors: { red: 1, green: 0.5 }, // average over 3 pieces 0.5, × 1
+    shape: { everyday: { pants: 0.5 } }, // × 2
+    dressedUp: { everyday: { casual: 1 } }, // average over the top and pants 1, × 1
+  });
+  assert.equal(score(base(), blankData(), { habits, occasion: 'everyday' }), 5 + 1 + 0.5 + 1 + 1);
+});
+
+test('habits for another occasion add nothing', () => {
+  const habits = habitsOf({ shape: { work: { pants: 1 } }, dressedUp: { work: { casual: 1 } } });
+  assert.equal(score(base(), blankData(), { habits, occasion: 'everyday' }), 5);
+});
+
+test('an outfit worn yesterday still steps aside, even when it fits all her habits', () => {
+  const yesterday = { lastWorn: '2026-10-24' };
+  const favorite = [m('t1', 'tops', { color: 'pink', ...yesterday }), m('p1', 'pants', { color: 'black', ...yesterday }), m('s1', 'shoes', { color: 'white', ...yesterday })];
+  const fresh = [m('t2', 'tops', { color: 'grey', style: 'smart' }), m('p2', 'pants', { color: 'navy', style: 'smart' }), m('s2', 'shoes', { color: 'beige', style: 'smart' })];
+  const habits = habitsOf({
+    colorPairs: { 'black|pink': 1, 'pink|white': 1, 'black|white': 1 },
+    colors: { pink: 1, black: 1, white: 1 },
+    shape: { everyday: { pants: 1 } },
+    dressedUp: { everyday: { casual: 1, smart: -1 } },
+  });
+  const [best] = pick([...favorite, ...fresh], { habits, count: 1 }).outfits;
+  assert.equal(best.key, 'p2|s2|t2');
+});
+
+test('pickOutfits uses her habits', () => {
+  const items = [m('t1', 'tops', { color: 'red' }), m('t2', 'tops', { color: 'blue' }), m('p', 'pants'), m('s', 'shoes')];
+  assert.equal(pick(items, { count: 1 }).outfits[0].key, 'p|s|t1');
+  assert.equal(pick(items, { count: 1, habits: habitsOf({ colors: { blue: 1 } }) }).outfits[0].key, 'p|s|t2');
 });
 
 test('picks 3 outfits that share no piece', () => {
@@ -111,6 +151,24 @@ test('a 90-piece wardrobe with likes and dislikes picks in under 250 ms', () => 
   for (let i = 0; i < 40; i++) data.pairScores[`${items[i].id}|${items[i + 30].id}`] = 1;
   for (let i = 0; i < 10; i++) data.outfitPenalties[[items[i].id, items[i + 30].id, items[i + 60].id].sort().join('|')] = -5;
   assertFast(items, {}, data);
+});
+
+test('a 90-piece wardrobe with a full diary picks in under 250 ms', () => {
+  const items = bigWardrobe({ withWearDates: true });
+  const data = blankData();
+  for (const item of items) data.items[item.id] = item;
+  const kinds = ['wore', 'like', 'dislike'];
+  for (let i = 0; i < SETTINGS.habits.diaryMax; i++) {
+    data.diary.push({
+      date: `2026-${String(1 + (i % 10)).padStart(2, '0')}-15`,
+      kind: kinds[i % 3],
+      occasion: 'everyday',
+      ids: [items[i % 30].id, items[30 + (i % 15)].id, items[55 + (i % 15)].id],
+    });
+  }
+  const habits = learnHabits(data, today);
+  assert.ok(Object.keys(habits.colorPairs).length > 10);
+  assertFast(items, { habits }, data);
 });
 
 test('pickOutfits ranks outfits the same way scoreOutfit scores them', () => {
