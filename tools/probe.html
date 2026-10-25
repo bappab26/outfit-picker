@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>OneDrive Probe</title>
+  <style>
+    body { font: 16px/1.4 system-ui, sans-serif; margin: 0; padding: 16px; background: #faf7f2; color: #222; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    button { font: inherit; min-height: 44px; padding: 8px 14px; margin: 0 8px 8px 0; border-radius: 8px; border: 1px solid #888; background: #fff; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 14px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@4.30.0/lib/msal-browser.min.js" integrity="sha384-RGxxfG5yRS8DLU7ZJ8OoLhbV/BsJFHyPuMVHrTLbpj3t5Z15LnviJmaznKY/a7LZ" crossorigin="anonymous"></script>
+</head>
+<body>
+  <h1>OneDrive probe</h1>
+  <p>Checks whether this phone or computer can do what Outfit Picker needs. See README.md, "Run the probe".</p>
+  <button id="signin-redirect">Sign in (redirect)</button>
+  <button id="signin-popup">Sign in (popup)</button>
+  <button id="run">Run checks</button>
+  <button id="copy">Copy results</button>
+  <pre id="log"></pre>
+  <script type="module" src="probe.js"></script>
+</body>
+</html>

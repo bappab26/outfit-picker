@@ -1,0 +1,119 @@
+// Talks to OneDrive through Microsoft Graph: the Wardrobe folders, the photos
+// in them, and the app's data file (spec §4.3, §4.5).
+import { DATA_FILE, FOLDERS, IMAGE_STRATEGY, WARDROBE_FOLDER } from './config.js';
+
+const GRAPH = 'https://graph.microsoft.com/v1.0';
+
+// `status` is the HTTP status, or 0 when the request never reached OneDrive (offline).
+export class GraphError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.name = 'GraphError';
+    this.status = status;
+  }
+}
+
+export function createGraph({ getToken, fetchFn = (...args) => fetch(...args), imageStrategy = IMAGE_STRATEGY }) {
+  async function request(url, init) {
+    let res;
+    try {
+      res = await fetchFn(url, init);
+    } catch (e) {
+      throw new GraphError(0, e.message);
+    }
+    return res;
+  }
+
+  async function fail(res) {
+    throw new GraphError(res.status, await res.text().catch(() => ''));
+  }
+
+  // A Graph call with the sign-in token. Statuses in `allow` are returned instead of thrown.
+  async function graph(method, pathOrUrl, { body, contentType = 'application/json', allow = [] } = {}) {
+    const url = pathOrUrl.startsWith('https://') ? pathOrUrl : GRAPH + pathOrUrl;
+    const headers = { Authorization: `Bearer ${await getToken()}` };
+    if (body !== undefined) headers['Content-Type'] = contentType;
+    const res = await request(url, { method, headers, body });
+    if (!res.ok && !allow.includes(res.status)) await fail(res);
+    return res;
+  }
+
+  // A pre-signed address (thumbnail or download link): no token needed.
+  async function download(url) {
+    const res = await request(url);
+    if (!res.ok) await fail(res);
+    return res.blob();
+  }
+
+  const wardrobe = `/me/drive/root:/${encodeURIComponent(WARDROBE_FOLDER)}`;
+  const appFile = (name) => `/me/drive/special/approot:/${encodeURIComponent(name)}`;
+  const newFolder = (name) => JSON.stringify({ name, folder: {}, '@microsoft.graph.conflictBehavior': 'fail' });
+
+  // A file's pre-signed download address. Reading through /content instead answers with a
+  // redirect, which browsers refuse for requests that carry a token.
+  async function downloadUrl(path, fileName) {
+    const res = await graph('GET', path, { allow: [404] });
+    if (res.status === 404) return null;
+    const url = (await res.json())['@microsoft.graph.downloadUrl'];
+    if (!url) throw new GraphError(404, `no download address for ${fileName}`);
+    return url;
+  }
+
+  async function listFolder(folder, category) {
+    const entries = [];
+    // No $select: it isn't guaranteed to keep the expanded thumbnails in the answer.
+    let next = `${wardrobe}/${encodeURIComponent(folder)}:/children?$expand=thumbnails&$top=200`;
+    while (next) {
+      const res = await graph('GET', next, { allow: [404] });
+      if (res.status === 404) break; // folder missing: nothing in it
+      const page = await res.json();
+      for (const item of page.value ?? []) {
+        if (!item.file?.mimeType?.startsWith('image/')) continue;
+        entries.push({ id: item.id, category, fileName: item.name, thumbUrl: item.thumbnails?.[0]?.medium?.url ?? null });
+      }
+      next = page['@odata.nextLink'];
+    }
+    return entries;
+  }
+
+  return {
+    async ensureFolders() {
+      const res = await graph('GET', `${wardrobe}:/children?$select=name,folder&$top=200`, { allow: [404] });
+      let existing = [];
+      if (res.status === 404) {
+        await graph('POST', '/me/drive/root/children', { body: newFolder(WARDROBE_FOLDER), allow: [409] });
+      } else {
+        existing = ((await res.json()).value ?? []).filter((i) => i.folder).map((i) => i.name.toLowerCase());
+      }
+      for (const name of Object.keys(FOLDERS)) {
+        if (existing.includes(name.toLowerCase())) continue;
+        await graph('POST', `${wardrobe}:/children`, { body: newFolder(name), allow: [409] });
+      }
+    },
+
+    async listWardrobe() {
+      const lists = await Promise.all(Object.entries(FOLDERS).map(([folder, category]) => listFolder(folder, category)));
+      return lists.flat();
+    },
+
+    async fetchImageBlob(entry) {
+      if (imageStrategy === 'download') {
+        const url = await downloadUrl(`/me/drive/items/${encodeURIComponent(entry.id)}`, entry.fileName);
+        if (!url) throw new GraphError(404, `${entry.fileName} is gone`);
+        return download(url);
+      }
+      if (!entry.thumbUrl) throw new GraphError(404, `no thumbnail for ${entry.fileName}`);
+      return download(entry.thumbUrl);
+    },
+
+    async readData() {
+      const url = await downloadUrl(appFile(DATA_FILE), DATA_FILE);
+      return url ? (await download(url)).text() : null;
+    },
+
+    // `fileName` other than data.json is for backups.
+    async writeData(text, fileName = DATA_FILE) {
+      await graph('PUT', `${appFile(fileName)}:/content`, { body: text });
+    },
+  };
+}

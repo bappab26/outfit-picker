@@ -1,0 +1,9 @@
+{
+  "name": "outfit-picker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node scripts/serve.mjs"
+  }
+}
