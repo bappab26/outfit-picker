@@ -5,7 +5,7 @@
 export const EGGS = {
   // Taps on the version line that turn devil mode on or off, each at most tapGapMs after the
   // last; a countdown shows from the countdownFrom-th tap.
-  devilTaps: 7,
+  devilTaps: 6,
   countdownFrom: 4,
   tapGapMs: 1500,
   // Holding the version line this long opens the secret card.
@@ -15,7 +15,7 @@ export const EGGS = {
   // Turned-down outfits a never-liked, never-worn piece is in before the app asks about it.
   nudgeAfter: 5,
   // Her birthday, as MM-DD.
-  birthday: '04-20',
+  birthday: '04-25',
   // "Go to sleep" shows from fromHour:00 until toHour:00.
   lateNight: { fromHour: 2, toHour: 5 },
 };
