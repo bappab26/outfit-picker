@@ -2,7 +2,6 @@
 import { accountName, getToken, initAuth, isConfigured, isLibraryLoaded, signIn } from './auth.js';
 import { detectImageColor } from './colors.js';
 import { todayISO } from './dates.js';
-import { createDeck, fillAhead, move, shownKeys } from './deck.js';
 import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
 import { learnHabits, styleSummary } from './habits.js';
@@ -28,6 +27,11 @@ const root = document.getElementById('app');
 // No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
 document.addEventListener('gesturestart', (event) => event.preventDefault());
 
+// Esc closes the big outfit (on a computer).
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.zoomed !== null && state.screen === 'home') homeActions.closeZoom();
+});
+
 // localStorage can be missing or throw (private browsing); the app still works without it.
 const storage = {
   getItem(key) {
@@ -46,11 +50,11 @@ const state = {
   source: null,
   data: null,
   saver: null,
-  // The home screen's outfit cards, one shown at a time (deck.js). `deckEnter` is 'next' or
-  // 'previous' right after a move, so the new front card comes in from the right side.
-  deck: createDeck([]),
-  deckEnter: null,
+  cards: [],
   notes: [],
+  // The card shown big (its index), or null; `zoomOpening` makes it zoom in only as it opens.
+  zoomed: null,
+  zoomOpening: false,
   saveError: false,
   refreshing: false,
   // The error screen: whether it's a connection problem, and what Retry does.
@@ -100,17 +104,9 @@ function newCard(outfit) {
 
 function recompute(extra) {
   const { outfits, notes } = pickOutfits(labeledItems(state.data), state.data, pickOptions(extra));
-  state.deck = createDeck(outfits.map(newCard));
+  state.cards = outfits.map(newCard);
   state.notes = notes;
-}
-
-// More cards for the end of the deck: outfits it doesn't have yet (none once she has seen
-// them all; Shuffle then starts again).
-function moreCards() {
-  const shown = new Set(shownKeys(state.deck));
-  return pickOutfits(labeledItems(state.data), state.data, pickOptions({ exclude: [...shown] })).outfits
-    .filter((outfit) => !shown.has(outfit.key))
-    .map(newCard);
+  state.zoomed = null;
 }
 
 function changed() {
@@ -131,22 +127,11 @@ const homeActions = {
     render();
   },
   shuffle() {
-    recompute({ exclude: shownKeys(state.deck) });
-    render();
-  },
-  next() {
-    if (!move(state.deck, 1)) return;
-    fillAhead(state.deck, 2, moreCards);
-    state.deckEnter = 'next';
-    render();
-  },
-  previous() {
-    if (!move(state.deck, -1)) return;
-    state.deckEnter = 'previous';
+    recompute({ exclude: state.cards.filter((c) => c.outfit).map((c) => c.outfit.key) });
     render();
   },
   like(i) {
-    const c = state.deck.cards[i];
+    const c = state.cards[i];
     if (c.undoLike) c.undoLike();
     c.undoLike = c.undoLike ? null : like(state.data, c.outfit, choiceDay());
     c.liked = Boolean(c.undoLike);
@@ -155,7 +140,7 @@ const homeActions = {
     render();
   },
   wore(i) {
-    const c = state.deck.cards[i];
+    const c = state.cards[i];
     if (c.undoWore) c.undoWore();
     c.undoWore = c.undoWore ? null : woreThis(state.data, c.outfit, choiceDay());
     c.worn = Boolean(c.undoWore);
@@ -164,24 +149,36 @@ const homeActions = {
     render();
   },
   dislike(i) {
-    const before = state.deck.cards[i];
+    const before = state.cards[i];
     const undo = dislike(state.data, before.outfit, choiceDay());
+    const others = state.cards.filter((c, j) => j !== i && c.outfit);
     const [next] = pickOutfits(labeledItems(state.data), state.data, pickOptions({
-      exclude: shownKeys(state.deck),
+      exclude: [before.outfit.key, ...others.map((c) => c.outfit.key)],
+      avoidItemIds: others.flatMap((c) => c.outfit.items.map((item) => item.id)),
       count: 1,
       forgottenCards: before.forgotten ? 1 : 0,
     })).outfits;
     const undoDislike = { before, undo };
     // Never put the outfit she just turned down straight back on screen.
-    if (next && next.key !== before.outfit.key) state.deck.cards[i] = { ...newCard(next), undoDislike };
-    else state.deck.cards[i] = { outfit: null, undoDislike };
+    if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike };
+    else state.cards[i] = { outfit: null, undoDislike };
+    state.zoomed = null; // the outfit she was looking at is gone
     changed();
     render();
   },
+  zoom(i) {
+    state.zoomed = i;
+    state.zoomOpening = true;
+    render();
+  },
+  closeZoom() {
+    state.zoomed = null;
+    render();
+  },
   undoDislike(i) {
-    const { before, undo } = state.deck.cards[i].undoDislike;
+    const { before, undo } = state.cards[i].undoDislike;
     undo();
-    state.deck.cards[i] = before;
+    state.cards[i] = before;
     changed();
     render();
   },
@@ -461,20 +458,20 @@ function renderError() {
     h('button', { class: 'primary', onclick: () => state.error.retry() }, 'Retry')));
 }
 
-// The way the deck just moved, once: redrawing for a tap doesn't slide the card in again.
-function takeDeckEnter() {
-  const enter = state.deckEnter;
-  state.deckEnter = null;
-  return enter;
+function takeZoomOpening() {
+  const opening = state.zoomOpening;
+  state.zoomOpening = false;
+  return opening;
 }
 
 function renderHomeScreen() {
   renderHome(root, {
     settings: state.data.settings,
+    zoomed: state.zoomed,
+    zoomOpening: takeZoomOpening(),
     name: displayName(),
     renaming: state.renaming,
-    deck: state.deck,
-    enter: takeDeckEnter(),
+    cards: state.cards,
     notes: state.notes,
     newCount: unlabeledIds(state.data).length,
     photoUrl: (id) => state.source.photoUrl(id),
@@ -531,15 +528,21 @@ const SCREENS = {
 
 function render() {
   document.title = displayName();
+  // A tap inside the big outfit redraws it: keep it scrolled where it was.
+  const zoomScroll = root.querySelector('.zoom-panel')?.scrollTop ?? 0;
   clear(root);
   SCREENS[state.screen]();
+  const panel = root.querySelector('.zoom-panel');
+  if (panel) panel.scrollTop = zoomScroll;
+  // The page behind the big outfit stays still.
+  document.body.classList.toggle('no-scroll', Boolean(panel));
 }
 
 // Switches screens. A new screen fades in; showing the same one again (the next piece to
 // label) doesn't, and neither do taps that only redraw the screen (render).
 function show(screen) {
   const isNew = screen !== state.screen;
-  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null });
+  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null });
   state.screen = screen;
   render();
   window.scrollTo(0, 0);

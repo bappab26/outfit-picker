@@ -1,9 +1,8 @@
-// Home screen: the app's name, occasion and temperature choices, then the deck of outfit
-// cards, one at a time, swiped or stepped through with ‹ › (spec §2).
+// Home screen: the app's name, occasion and temperature choices, then 3 outfit cards (spec §2).
+// Tapping a card's photos shows that outfit big, on its own, over the screen.
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
 import { append, choices, h, photo } from './dom.js';
 import { OCCASION_LABELS, TEMPERATURE_LABELS, VERSION_LINE } from './labels.js';
-import { attachSwipe } from './swipe.js';
 
 const NOTE_TEXT = {
   'add-shoes': 'Add some shoes',
@@ -43,58 +42,67 @@ function appTitle(view, actions) {
   h('button', { type: 'button', onclick: actions.cancelRename }, 'Cancel'));
 }
 
-function card(c, i, view, actions, extraClass) {
+function card(c, i, view, actions) {
   const undo = c.undoDislike && h('button', { class: 'link undo', onclick: () => actions.undoDislike(i) }, 'Undo 👎');
   if (!c.outfit) {
     // She turned this outfit down and there was nothing else to show.
-    return h('article', { class: `card ${extraClass}` },
+    return h('article', { class: 'card' },
       h('div', { class: 'card-top' }, h('span', { class: 'hint' }, 'No other outfit to show.'), undo));
   }
-  const { outfit, liked, worn } = c;
-  return h('article', { class: `card ${extraClass}` },
+  const { outfit } = c;
+  const zoom = () => actions.zoom(i);
+  return h('article', { class: 'card' },
     (c.forgotten || undo) && h('div', { class: 'card-top' },
-      c.forgotten && h('span', { class: 'tag' }, 'Not worn in a while'),
+      c.forgotten && forgottenTag(),
       undo),
-    h('div', { class: `pieces count-${outfit.items.length}` },
-      outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
-    h('div', { class: 'card-actions' },
-      // 👍 and Wore this are toggles: a second tap takes them back.
-      h('button', {
-        class: liked ? 'icon on' : 'icon',
-        'aria-label': 'Like',
-        'aria-pressed': liked ? 'true' : 'false',
-        onclick: () => actions.like(i),
-      }, '👍'),
-      h('button', { class: 'icon', 'aria-label': 'Dislike', onclick: () => actions.dislike(i) }, '👎'),
-      h('button', {
-        class: worn ? 'wore done' : 'wore',
-        'aria-pressed': worn ? 'true' : 'false',
-        onclick: () => actions.wore(i),
-      }, worn ? 'Worn today ✓' : 'Wore this')));
+    h('div', {
+      class: `pieces zoomable count-${outfit.items.length}`,
+      role: 'button',
+      tabindex: '0',
+      'aria-label': 'See this outfit bigger',
+      onclick: zoom,
+      onkeydown: (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        zoom();
+      },
+    }, outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
+    cardButtons(c, i, actions));
 }
 
-// The front card with up to two more peeking out behind it, and ‹ › under them.
-function deck(view, actions) {
-  const { cards, index } = view.deck;
-  if (!cards.length) return null;
-  const behind = Math.min(2, cards.length - index - 1);
-  const hasPrevious = index > 0;
-  const hasNext = index < cards.length - 1;
-  const enter = view.enter ? ` enter-${view.enter}` : '';
-  const front = card(cards[index], index, view, actions, `deck-card${enter}`);
-  attachSwipe(front, {
-    allowed: (result) => (result === 'next' ? hasNext : hasPrevious),
-    onSwipe: (result) => (result === 'next' ? actions.next() : actions.previous()),
+const forgottenTag = () => h('span', { class: 'tag' }, 'Not worn in a while');
+
+// 👍 and Wore this are toggles: a second tap takes them back.
+function cardButtons({ liked, worn }, i, actions) {
+  return h('div', { class: 'card-actions' },
+    h('button', {
+      class: liked ? 'icon on' : 'icon',
+      'aria-label': 'Like',
+      'aria-pressed': liked ? 'true' : 'false',
+      onclick: () => actions.like(i),
+    }, '👍'),
+    h('button', { class: 'icon', 'aria-label': 'Dislike', onclick: () => actions.dislike(i) }, '👎'),
+    h('button', {
+      class: worn ? 'wore done' : 'wore',
+      'aria-pressed': worn ? 'true' : 'false',
+      onclick: () => actions.wore(i),
+    }, worn ? 'Worn today ✓' : 'Wore this'));
+}
+
+// One outfit, big, over a darkened screen. × or a tap on the dark area closes it (Esc too, in app.js).
+function bigOutfit(c, i, view, actions) {
+  const close = h('button', { class: 'icon zoom-close', 'aria-label': 'Close', onclick: actions.closeZoom }, '×');
+  const panel = h('div', { class: 'zoom-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Outfit' },
+    h('div', { class: 'zoom-top' }, c.forgotten && forgottenTag(), close),
+    h('div', { class: 'zoom-pieces' },
+      c.outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
+    cardButtons(c, i, actions));
+  const backdrop = h('div', { class: view.zoomOpening ? 'zoom opening' : 'zoom' }, panel);
+  backdrop.addEventListener('click', (event) => {
+    if (event.target === backdrop) actions.closeZoom();
   });
-  return [
-    h('div', { class: 'deck' },
-      Array.from({ length: behind }, (_, k) => h('div', { class: `deck-back b${behind - k}`, 'aria-hidden': 'true' })),
-      front),
-    h('div', { class: 'deck-nav' },
-      h('button', { class: 'icon', 'aria-label': 'Previous outfit', disabled: !hasPrevious, onclick: actions.previous }, '‹'),
-      h('span', { class: 'deck-hint' }, 'Swipe for more'),
-      h('button', { class: 'icon', 'aria-label': 'Next outfit', disabled: !hasNext, onclick: actions.next }, '›')),
-  ];
+  if (view.zoomOpening) queueMicrotask(() => close.focus({ preventScroll: true }));
+  return backdrop;
 }
 
 export function renderHome(root, view, actions) {
@@ -126,7 +134,8 @@ export function renderHome(root, view, actions) {
     choices('Temperature', TEMPERATURES, TEMPERATURE_LABELS, settings.temperature, actions.setTemperature),
     h('div', { class: 'toolbar' }, h('button', { class: 'shuffle', onclick: actions.shuffle }, 'Shuffle')),
     view.notes.map((note) => h('p', { class: 'note' }, NOTE_TEXT[note])),
-    deck(view, actions),
+    view.cards.map((c, i) => card(c, i, view, actions)),
+    view.zoomed !== null && view.cards[view.zoomed]?.outfit && bigOutfit(view.cards[view.zoomed], view.zoomed, view, actions),
     h('footer', { class: 'version' }, VERSION_LINE),
   );
 }

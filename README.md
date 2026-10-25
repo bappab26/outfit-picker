@@ -14,12 +14,10 @@ Occasions use these styles: Everyday (Casual, Smart), Work (Smart), Evening out 
 Dressy), Special event (Dressy) and At home (Cozy, Casual). Cozy shoes and jackets are
 only suggested at home, and at home a coat is never required.
 
-Outfits come as a deck of cards, one at a time: swipe left for the next outfit and right to go
-back (or tap **‹ ›**). Swiping records nothing; only the buttons do. The deck tops itself up as
-she goes, until she has seen every outfit; **Shuffle** starts a new one. Every third card has a
-piece she hasn't worn in 30 days or more (when there is one), marked **Not worn in a while**.
-👍 and **Wore this** can be tapped again to take them back; after a 👎, **Undo 👎** brings the
-outfit back.
+Of the three outfits, the last one always has a piece she hasn't worn in 30 days or more
+(when there is one), marked **Not worn in a while**. 👍 and **Wore this** can be tapped again
+to take them back; after a 👎, **Undo 👎** brings the outfit back. Tapping an outfit's photos
+shows it big, on its own; **×**, a tap outside it, or Esc closes it.
 
 Clothes can be added from the app (**Wardrobe → Add clothes**: pick a folder, then take or
 choose photos) or by saving photos into the OneDrive folders. Tapping a piece in Wardrobe
