@@ -40,7 +40,7 @@ const storage = {
 };
 
 const state = {
-  screen: 'signin',
+  screen: null, // nothing shown yet, so the first screen fades in too
   source: null,
   data: null,
   saver: null,
@@ -396,10 +396,20 @@ function render() {
   SCREENS[state.screen]();
 }
 
+// Switches screens. A new screen fades in; showing the same one again (the next piece to
+// label) doesn't, and neither do taps that only redraw the screen (render).
 function show(screen) {
+  const isNew = screen !== state.screen;
   state.screen = screen;
   render();
   window.scrollTo(0, 0);
+  if (isNew) fadeIn();
+}
+
+function fadeIn() {
+  root.classList.remove('screen-in');
+  void root.offsetWidth; // lets the animation start again
+  root.classList.add('screen-in');
 }
 
 // Home-screen install and fast opening (online only; skipped on the local test server).

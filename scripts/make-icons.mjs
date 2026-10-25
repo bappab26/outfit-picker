@@ -4,19 +4,19 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BACKGROUND = [0x32, 0x17, 0x4d]; // Russian violet, --bg in css/app.css
+const BACKGROUND = [0x29, 0x13, 0x3f]; // --bg in css/app.css
 const HANGER = [0xff, 0xff, 0xff];
 const HORN = [0xff, 0x4d, 0x6d];
 const SAMPLES = 4; // per pixel side, for smooth edges
 
 // Everything below is in a 0–1 square, y going down.
-const LINE = 0.05; // thickness of the hanger
-const HOOK = { x: 0.5, y: 0.32, r: 0.075 };
-const NECK = [0.5, 0.49];
-const LEFT = [0.16, 0.77];
-const RIGHT = [0.84, 0.77];
+const LINE = 0.068; // thickness of the hanger
+const HOOK = { x: 0.5, y: 0.36, r: 0.085 };
+const NECK = [0.5, 0.51];
+const LEFT = [0.14, 0.79];
+const RIGHT = [0.86, 0.79];
 // Degrees around the hook (0 = right, 90 = down) left open: the hook's gap at the bottom left.
-const HOOK_GAP = [90, 150];
+const HOOK_GAP = [90, 160];
 
 function toSegment(x, y, [ax, ay], [bx, by]) {
   const dx = bx - ax;
@@ -41,13 +41,13 @@ function onHanger(x, y) {
   return lines.some(([a, b]) => toSegment(x, y, a, b) <= LINE / 2);
 }
 
-// Two horns growing from the sides of the hook, curving out and then up to a point.
+// Two short horns on top of the hook, curving out and then up to a point.
 // Each is a curved line that gets thinner from its base to its tip.
 const LEFT_HORN = {
-  base: atAngle(-150),
-  bend: [HOOK.x - 0.13, HOOK.y - 0.05],
-  tip: [HOOK.x - 0.11, HOOK.y - 0.16],
-  width: 0.036,
+  base: atAngle(-135),
+  bend: [HOOK.x - 0.125, HOOK.y - 0.11],
+  tip: [HOOK.x - 0.08, HOOK.y - 0.205],
+  width: 0.058,
 };
 const HORNS = [LEFT_HORN, {
   base: [1 - LEFT_HORN.base[0], LEFT_HORN.base[1]],
