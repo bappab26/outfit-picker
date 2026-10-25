@@ -13,6 +13,8 @@
   --accent-soft: #5b3c7d;
   --warn-bg: #ffe9a8;
   --warn-text: #4a3500;
+  --danger: #ff6b81;
+  --danger-text: #3d0712;
   --radius: 14px;
 }
 
@@ -240,6 +242,45 @@ button.link {
 .color-option { display: flex; align-items: center; gap: 8px; border-radius: 12px; }
 .color-option[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .label-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+.label-actions.edit { justify-content: space-between; align-items: center; gap: 12px; }
+
+/* Delete, and its "are you sure?" box */
+button.danger { background: var(--danger); border-color: var(--danger); color: var(--danger-text); }
+.danger-link { border: none; background: none; color: var(--danger); padding: 0 4px; font-weight: 600; }
+.confirm {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+.confirm p { margin: 0 0 10px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Adding clothes */
+.add-clothes { display: block; width: 100%; margin: 0 0 12px; }
+.add-box {
+  margin: 0 0 12px;
+  padding: 2px 14px 8px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+.add-box h2 { font-size: 16px; margin: 10px 0 8px; }
+.add-box .link { margin-top: 6px; }
+label.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+}
+label.chip:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Hidden but still opened by tapping its folder (display: none can stop some phones opening it). */
+.file-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
 
 /* Wardrobe screen */
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }

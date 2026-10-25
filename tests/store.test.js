@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SETTINGS } from '../js/settings.js';
-import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver } from '../js/store.js';
+import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver, addPiece, removePieces } from '../js/store.js';
 
 const entry = (id, category = 'tops', fileName = `${id}.jpg`) => ({ id, category, fileName, thumbUrl: null });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -172,4 +172,22 @@ test('parseData keeps her name for the app, trimmed and at most 40 letters', () 
 test('parseData forgets the old Something different switch', () => {
   const data = parseData(JSON.stringify({ version: 1, settings: { occasion: 'work', temperature: 'hot', somethingDifferent: true } }));
   assert.deepEqual(data.settings, { occasion: 'work', temperature: 'hot', name: null });
+});
+
+test('addPiece adds a photo as an unlabeled piece', () => {
+  const data = emptyData();
+  addPiece(data, { id: 'n', category: 'jeans', fileName: 'photo-1.jpg' }, '2026-10-25');
+  assert.deepEqual(data.items.n, { category: 'jeans', fileName: 'photo-1.jpg', color: null, warmth: null, style: null, addedAt: '2026-10-25', lastWorn: null, wearCount: 0 });
+  assert.deepEqual(unlabeledIds(data), ['n']);
+});
+
+test('removePieces drops the pieces with their pair scores and outfit penalties', () => {
+  const data = emptyData();
+  for (const id of ['a', 'b', 'c']) addPiece(data, { id, category: 'tops', fileName: `${id}.jpg` }, '2026-10-25');
+  data.pairScores = { 'a|b': 1, 'b|c': 2 };
+  data.outfitPenalties = { 'a|b|c': -5 };
+  removePieces(data, ['a']);
+  assert.deepEqual(Object.keys(data.items), ['b', 'c']);
+  assert.deepEqual(data.pairScores, { 'b|c': 2 });
+  assert.deepEqual(data.outfitPenalties, {});
 });

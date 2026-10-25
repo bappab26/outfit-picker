@@ -1,6 +1,6 @@
 // Talks to OneDrive through Microsoft Graph: the Wardrobe folders, the photos
 // in them, and the app's data file (spec §4.3, §4.5).
-import { DATA_FILE, FOLDERS, IMAGE_STRATEGY, WARDROBE_FOLDER } from './config.js';
+import { DATA_FILE, FOLDERS, folderOf, IMAGE_STRATEGY, WARDROBE_FOLDER } from './config.js';
 
 const GRAPH = 'https://graph.microsoft.com/v1.0';
 
@@ -104,6 +104,34 @@ export function createGraph({ getToken, fetchFn = (...args) => fetch(...args), i
       }
       if (!entry.thumbUrl) throw new GraphError(404, `no thumbnail for ${entry.fileName}`);
       return download(entry.thumbUrl);
+    },
+
+    // Saves a photo into the Wardrobe folder for `category`. OneDrive renames it if the
+    // name is taken, so nothing is ever replaced. Returns it as a listing entry.
+    async uploadPhoto(category, fileName, blob) {
+      const path = `${wardrobe}/${encodeURIComponent(folderOf(category))}/${encodeURIComponent(fileName)}`;
+      const res = await graph('PUT', `${path}:/content?@microsoft.graph.conflictBehavior=rename`, { body: blob, contentType: 'image/jpeg' });
+      const item = await res.json();
+      return { id: item.id, category, fileName: item.name, thumbUrl: null };
+    },
+
+    // Moves a photo into the Wardrobe folder for `category`; its id stays the same.
+    // If that folder has a photo with the same name, it becomes "name (2).jpg" and so on.
+    async movePhoto(id, category, fileName) {
+      const folder = await (await graph('GET', `${wardrobe}/${encodeURIComponent(folderOf(category))}`)).json();
+      const dot = fileName.lastIndexOf('.');
+      const [base, ext] = dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ''];
+      for (let n = 1; ; n++) {
+        const body = { parentReference: { id: folder.id } };
+        if (n > 1) body.name = `${base} (${n})${ext}`;
+        const res = await graph('PATCH', `/me/drive/items/${encodeURIComponent(id)}`, { body: JSON.stringify(body), allow: n < 5 ? [409] : [] });
+        if (res.status !== 409) return { fileName: (await res.json()).name };
+      }
+    },
+
+    // OneDrive keeps deleted files in its recycle bin for a while. Already gone is fine.
+    async deletePhoto(id) {
+      await graph('DELETE', `/me/drive/items/${encodeURIComponent(id)}`, { allow: [404] });
     },
 
     async readData() {

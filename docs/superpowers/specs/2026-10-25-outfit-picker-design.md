@@ -55,8 +55,15 @@ and a French interface (the interface is English).
 
 ### Adding clothes
 
-- She photographs each piece (one piece per photo, plain background works best) and saves
-  it into the right subfolder, from the OneDrive app or by sharing from her photo gallery.
+- **From the app:** **Wardrobe → Add clothes**, then a folder, opens the phone's camera or
+  gallery (several photos at once). Each photo is shrunk to at most 1600 pixels on its longest
+  side (JPEG), uploaded into that OneDrive folder (OneDrive renames it if the name is taken),
+  added as an unlabeled piece with its detected color, and labeling starts right away. Until
+  OneDrive has made its preview, the photo shows from the phone. If some uploads fail, the app
+  says how many were added and stays on the Wardrobe screen. Not in sample mode.
+- **From OneDrive:** she photographs each piece (one piece per photo, plain background works
+  best) and saves it into the right subfolder, from the OneDrive app or by sharing from her
+  photo gallery.
 - The next time she opens the app, it shows a banner like **"3 new pieces to label"**.
   Tapping it opens the labeling screen, one photo at a time:
   - The photo, large, with a swatch of the **detected color** and its name. Tapping the
@@ -95,7 +102,15 @@ and a French interface (the interface is English).
 ### Wardrobe screen
 
 - A grid of all pieces, grouped by folder, each showing its color, labels and "last worn".
-- Tapping a piece opens the same labeling view so she can change warmth, style or color.
+- Tapping a piece opens the same labeling view so she can change warmth, style or color, and:
+  - **Folder:** pick another folder to move the photo there in OneDrive. Its id stays the
+    same, so labels, wear history and diary lines stay. A name already taken in that folder
+    becomes "name (2).jpg".
+  - **Delete piece**, then "Delete this piece? The photo goes to your OneDrive recycle bin."
+    with Cancel and Delete. Delete removes the photo in OneDrive first, then the piece and its
+    pair scores and penalties.
+  - Both change OneDrive first: if that fails (offline), the piece stays as it was and a note
+    says so.
 - A **Refresh** button checks OneDrive again for new, moved or deleted photos.
 
 ### Sample mode
@@ -354,6 +369,7 @@ js/app.js                Starts the app, switches between screens
 js/auth.js               Sign-in with MSAL
 js/onedrive.js           Microsoft Graph calls: folders, listing, thumbnails, data file
 js/store.js              Load and save data; merge with the OneDrive listing
+js/photos.js             Shrink and name photos added from the app
 js/colors.js             Color list, color wheel, naming a pixel, detecting a photo's color
 js/rules.js              Build, filter, score and pick outfits
 js/feedback.js           Apply 👍, 👎 and Wore this to the data

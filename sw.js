@@ -1,7 +1,7 @@
 // Keeps a copy of the app's own files so it opens fast from the home screen.
 // Each open shows the saved copy and quietly fetches a fresh one for next time.
 // Raise the number in CACHE_NAME to drop the old copy at once (see README, "Put it online").
-const CACHE_NAME = 'outfit-picker-v7';
+const CACHE_NAME = 'outfit-picker-v8';
 
 const APP_FILES = [
   './',
@@ -18,6 +18,7 @@ const APP_FILES = [
   'js/habits.js',
   'js/keys.js',
   'js/onedrive.js',
+  'js/photos.js',
   'js/rules.js',
   'js/sample.js',
   'js/settings.js',

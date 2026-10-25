@@ -25,6 +25,11 @@ export const FOLDERS = {
   Coats: 'coats',
 };
 
+// The OneDrive folder name for a piece type (the other way round from FOLDERS).
+export function folderOf(category) {
+  return Object.keys(FOLDERS).find((folder) => FOLDERS[folder] === category);
+}
+
 // Set from the probe (docs/superpowers/probe-results.md).
 // How the app reads a photo's pixels to detect its color:
 // 'thumbnail' (OneDrive's small preview) or 'download' (the full photo).

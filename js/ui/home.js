@@ -10,9 +10,9 @@ const NOTE_TEXT = {
   'no-match': 'No outfits match this occasion and temperature yet. Try another choice, or label more pieces.',
 };
 
-const WELCOME = 'Welcome! Save photos of your clothes into the Wardrobe folder in your OneDrive: '
-  + 'Tops, Hoodies, Sweatshirts, Pants, Jeans, Shorts, Skirts, Dresses, Shoes, Jackets and Coats. '
-  + 'Then come back here to label them.';
+const WELCOME = 'Welcome! Add photos of your clothes, one piece per photo: tap Add clothes, or save them '
+  + 'into the Wardrobe folder in your OneDrive (Tops, Hoodies, Sweatshirts, Pants, Jeans, Shorts, Skirts, '
+  + 'Dresses, Shoes, Jackets and Coats). Then label them here.';
 
 // The app's name; tapping it lets her rename the app.
 function appTitle(view, actions) {
@@ -88,7 +88,10 @@ export function renderHome(root, view, actions) {
   );
 
   if (!view.hasLabeled) {
-    append(root, h('p', { class: 'welcome' }, WELCOME), h('footer', { class: 'version' }, VERSION_LINE));
+    append(root,
+      h('p', { class: 'welcome' }, WELCOME),
+      view.canAdd && h('button', { class: 'primary add-clothes', onclick: actions.addClothes }, '+ Add clothes'),
+      h('footer', { class: 'version' }, VERSION_LINE));
     return;
   }
 

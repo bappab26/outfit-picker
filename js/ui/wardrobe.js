@@ -50,6 +50,22 @@ function styleBox(style) {
       : h('p', { class: 'hint' }, 'Still learning. Keep tapping Wore this, 👍 and 👎.'));
 }
 
+// "Add clothes", then a folder: each folder is a label around a hidden photo picker, so one
+// tap opens the phone's camera or gallery (several photos can be picked at once).
+function addClothes(view, actions) {
+  if (!view.adding) {
+    return h('button', { class: 'primary add-clothes', disabled: Boolean(view.busy), onclick: actions.startAdding }, '+ Add clothes');
+  }
+  return h('section', { class: 'add-box' },
+    h('h2', {}, 'Add to which folder?'),
+    h('div', { class: 'chips' }, Object.entries(FOLDERS).map(([folder, category]) => {
+      const input = h('input', { type: 'file', accept: 'image/*', multiple: true, class: 'file-input' });
+      input.addEventListener('change', () => actions.addPhotos(category, [...input.files]));
+      return h('label', { class: 'chip' }, folder, input);
+    })),
+    h('button', { class: 'link', onclick: actions.cancelAdding }, 'Cancel'));
+}
+
 export function renderWardrobe(root, view, actions) {
   append(root,
     h('header', { class: 'topbar' },
@@ -59,6 +75,9 @@ export function renderWardrobe(root, view, actions) {
         ? h('button', { class: 'link', disabled: view.refreshing, onclick: actions.refresh },
           view.refreshing ? 'Refreshing…' : 'Refresh')
         : h('span', { class: 'topbar-spacer' })),
+    view.canAdd && addClothes(view, actions),
+    view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
+    view.note && h('p', { class: 'note', role: 'alert' }, view.note),
     !view.items.length && h('p', { class: 'hint' }, 'No pieces yet.'),
     view.style && styleBox(view.style),
     Object.entries(FOLDERS).map(([folder, category]) => {

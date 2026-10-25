@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createOneDriveSource } from '../js/sources.js';
+import { createOneDriveSource, createSampleSource } from '../js/sources.js';
+import { NeedsSignIn } from '../js/errors.js';
 
 const today = '2026-10-25';
 const PENDING = 'outfit-picker:pending';
@@ -32,11 +33,43 @@ function fakeGraph({ stored = dataWithA() } = {}) {
       g.writes.push(text);
       g.stored = text;
     },
+    // Photos sent, moved and deleted, in order. Uploads whose number is in `failUploads` fail.
+    uploads: [],
+    failUploads: new Set(),
+    moves: [],
+    deletes: [],
+    failChanges: false,
+    async uploadPhoto(category, fileName, blob) {
+      const n = g.uploads.length + 1;
+      g.uploads.push({ category, fileName, blob });
+      if (g.failUploads.has(n)) throw new Error('offline');
+      return { id: `up${n}`, category, fileName, thumbUrl: null };
+    },
+    async movePhoto(id, category, fileName) {
+      if (g.failChanges) throw new Error('offline');
+      g.moves.push([id, category, fileName]);
+      return { fileName: `moved-${fileName}` };
+    },
+    async deletePhoto(id) {
+      if (g.failChanges) throw new Error('offline');
+      g.deletes.push(id);
+    },
   };
   return g;
 }
 
-function setup({ detect = async () => 'navy', stored } = {}) {
+// Stand-ins for the browser's photo work: shrinking "writes" the photo's text, the color is pink.
+const fakePhotos = () => {
+  let urls = 0;
+  return {
+    shrink: async (file) => new Blob([`shrunk ${await file.text()}`], { type: 'image/jpeg' }),
+    color: async () => 'pink',
+    url: () => `local-url-${++urls}`,
+    name: (n) => `photo-${n}.jpg`,
+  };
+};
+
+function setup({ detect = async () => 'navy', stored, photos = fakePhotos() } = {}) {
   const graph = fakeGraph({ stored });
   const storage = fakeStorage();
   const detected = [];
@@ -45,6 +78,7 @@ function setup({ detect = async () => 'navy', stored } = {}) {
     storage,
     today,
     detect: async (e) => { detected.push(e); return detect(e); },
+    photos,
   });
   return { graph, storage, source, detected };
 }
@@ -140,4 +174,87 @@ test('refresh drops deleted photos and finds new ones', async () => {
   assert.deepEqual(newIds, ['c']);
   assert.equal(data.items.c.color, 'navy');
   assert.equal(JSON.parse(graph.writes.at(-1)).items.a, undefined);
+});
+
+const photo = (text) => new Blob([text]);
+
+test('addPhotos uploads each photo, shrunk, into its folder and adds it to be labeled', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  const { newIds, failed } = await source.addPhotos(data, 'jeans', [photo('one'), photo('two')]);
+  assert.deepEqual(newIds, ['up1', 'up2']);
+  assert.equal(failed, 0);
+  assert.deepEqual(graph.uploads.map((u) => [u.category, u.fileName]), [['jeans', 'photo-1.jpg'], ['jeans', 'photo-2.jpg']]);
+  assert.equal(await graph.uploads[0].blob.text(), 'shrunk one');
+  assert.deepEqual(data.items.up1, { category: 'jeans', fileName: 'photo-1.jpg', color: 'pink', warmth: null, style: null, addedAt: today, lastWorn: null, wearCount: 0 });
+  // OneDrive makes its preview a little later; until then the photo shows from the phone.
+  assert.equal(source.photoUrl('up1'), 'local-url-1');
+  assert.equal(source.photoUrl('up2'), 'local-url-2');
+});
+
+test('addPhotos keeps going after a failed upload and counts it', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  graph.failUploads = new Set([1]);
+  const { newIds, failed } = await source.addPhotos(data, 'tops', [photo('one'), photo('two')]);
+  assert.deepEqual(newIds, ['up2']);
+  assert.equal(failed, 1);
+  assert.equal(data.items.up1, undefined);
+});
+
+test('a photo the phone cannot shrink is uploaded as it is', async () => {
+  const photos = { ...fakePhotos(), shrink: async () => { throw new Error('cannot read this photo'); } };
+  const { graph, source } = setup({ photos });
+  const { data } = await source.load();
+  const original = photo('heic');
+  await source.addPhotos(data, 'tops', [original]);
+  assert.equal(graph.uploads[0].blob, original);
+});
+
+test('deletePiece deletes the photo in OneDrive, then the piece', async () => {
+  const { graph, source } = setup({ stored: JSON.stringify({ version: 1, items: { a: pieceA() }, pairScores: { 'a|b': 1 } }) });
+  const { data } = await source.load();
+  await source.deletePiece(data, 'a');
+  assert.deepEqual(graph.deletes, ['a']);
+  assert.equal(data.items.a, undefined);
+  assert.deepEqual(data.pairScores, {});
+});
+
+test('movePiece moves the photo and keeps its labels and history', async () => {
+  const { graph, source } = setup({ stored: dataWithA({ lastWorn: '2026-10-20', wearCount: 3 }) });
+  const { data } = await source.load();
+  await source.movePiece(data, 'a', 'sweatshirts');
+  assert.deepEqual(graph.moves, [['a', 'sweatshirts', 'a.jpg']]);
+  assert.deepEqual(data.items.a, pieceA({ category: 'sweatshirts', fileName: 'moved-a.jpg', lastWorn: '2026-10-20', wearCount: 3 }));
+});
+
+test('when OneDrive cannot be reached, moving or deleting leaves the piece as it was', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  const before = JSON.stringify(data.items.a);
+  graph.failChanges = true;
+  await assert.rejects(source.movePiece(data, 'a', 'coats'));
+  await assert.rejects(source.deletePiece(data, 'a'));
+  assert.equal(JSON.stringify(data.items.a), before);
+});
+
+test('sample mode can move and delete pieces but not add photos', async () => {
+  const source = createSampleSource({ storage: fakeStorage(), today });
+  const { data } = await source.load();
+  assert.equal(source.canAdd, false);
+  await source.movePiece(data, 'sample-01', 'sweatshirts');
+  assert.equal(data.items['sample-01'].category, 'sweatshirts');
+  await source.deletePiece(data, 'sample-02');
+  assert.equal(data.items['sample-02'], undefined);
+});
+
+test('OneDrive mode can add photos', () => {
+  assert.equal(setup().source.canAdd, true);
+});
+
+test('addPhotos stops when she has to sign in again, instead of counting the photos as failed', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  graph.uploadPhoto = async () => { throw new NeedsSignIn(); };
+  await assert.rejects(source.addPhotos(data, 'tops', [photo('one'), photo('two')]), NeedsSignIn);
 });

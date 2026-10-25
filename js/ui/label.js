@@ -1,8 +1,24 @@
 // Labeling screen: one piece at a time, with its color, warmth and style (spec §2).
+// Opened from the Wardrobe screen, it also moves the piece to another folder or deletes it.
 import { COLORS, SWATCHES } from '../colors.js';
+import { FOLDERS } from '../config.js';
 import { STYLES, WARMTHS } from '../rules.js';
 import { append, choices, h, photo, swatch } from './dom.js';
 import { STYLE_LABELS, WARMTH_LABELS, colorLabel } from './labels.js';
+
+// Piece type → its OneDrive folder name, in the Wardrobe screen's order.
+const FOLDER_LABELS = Object.fromEntries(Object.entries(FOLDERS).map(([folder, category]) => [category, folder]));
+
+function deleteRow(view, actions) {
+  if (!view.confirmDelete) {
+    return h('button', { class: 'danger-link', disabled: Boolean(view.busy), onclick: actions.askDelete }, 'Delete piece');
+  }
+  return h('div', { class: 'confirm', role: 'alertdialog', 'aria-label': 'Delete this piece?' },
+    h('p', {}, view.sampleMode ? 'Delete this piece?' : 'Delete this piece? The photo goes to your OneDrive recycle bin.'),
+    h('div', { class: 'confirm-actions' },
+      h('button', { onclick: actions.cancelDelete }, 'Cancel'),
+      h('button', { class: 'danger', disabled: Boolean(view.busy), onclick: actions.confirmDelete }, 'Delete')));
+}
 
 export function renderLabel(root, view, actions) {
   const { item, mode } = view;
@@ -32,9 +48,13 @@ export function renderLabel(root, view, actions) {
       grid),
     choices('Warmth', WARMTHS, WARMTH_LABELS, item.warmth, actions.setWarmth),
     choices('Style', STYLES, STYLE_LABELS, item.style, actions.setStyle),
-    h('div', { class: 'label-actions' },
-      mode === 'new'
-        ? h('button', { onclick: actions.skip }, 'Skip')
-        : h('button', { class: 'primary', onclick: actions.done }, 'Done')),
+    mode === 'edit' && choices('Folder', Object.values(FOLDERS), FOLDER_LABELS, item.category, actions.move),
+    view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
+    view.note && h('p', { class: 'note', role: 'alert' }, view.note),
+    mode === 'new'
+      ? h('div', { class: 'label-actions' }, h('button', { onclick: actions.skip }, 'Skip'))
+      : h('div', { class: 'label-actions edit' },
+        deleteRow(view, actions),
+        !view.confirmDelete && h('button', { class: 'primary', onclick: actions.done }, 'Done')),
   );
 }

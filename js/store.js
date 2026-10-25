@@ -97,16 +97,34 @@ export function parseData(text) {
 }
 
 // Brings `data` in line with the photos found in OneDrive (spec §4.3).
+// A new photo becomes an unlabeled piece.
+export function addPiece(data, { id, category, fileName }, today) {
+  data.items[id] = { category, fileName, color: null, warmth: null, style: null, addedAt: today, lastWorn: null, wearCount: 0 };
+}
+
+// Pieces whose photos are gone, with the pair scores and outfit penalties they were part of.
+// Diary lines stay: learning skips pieces that no longer exist.
+export function removePieces(data, ids) {
+  const gone = new Set(ids);
+  for (const id of gone) delete data.items[id];
+  for (const scores of [data.pairScores, data.outfitPenalties]) {
+    for (const key of Object.keys(scores)) {
+      if (key.split('|').some((id) => gone.has(id))) delete scores[key];
+    }
+  }
+}
+
 export function mergeListing(data, listing, today) {
   const newIds = [];
   let changed = false;
   const listed = new Set();
 
-  for (const { id, category, fileName } of listing) {
+  for (const entry of listing) {
+    const { id, category, fileName } = entry;
     listed.add(id);
     const item = data.items[id];
     if (!item) {
-      data.items[id] = { category, fileName, color: null, warmth: null, style: null, addedAt: today, lastWorn: null, wearCount: 0 };
+      addPiece(data, entry, today);
       newIds.push(id);
       changed = true;
     } else if (item.category !== category || item.fileName !== fileName) {
@@ -116,15 +134,10 @@ export function mergeListing(data, listing, today) {
     }
   }
 
-  const gone = new Set(Object.keys(data.items).filter((id) => !listed.has(id)));
-  if (gone.size) {
+  const gone = Object.keys(data.items).filter((id) => !listed.has(id));
+  if (gone.length) {
     changed = true;
-    for (const id of gone) delete data.items[id];
-    for (const scores of [data.pairScores, data.outfitPenalties]) {
-      for (const key of Object.keys(scores)) {
-        if (key.split('|').some((id) => gone.has(id))) delete scores[key];
-      }
-    }
+    removePieces(data, gone);
   }
   return { newIds, changed };
 }

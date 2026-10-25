@@ -1,7 +1,9 @@
 // Where the wardrobe comes from: the built-in sample (saved in the browser) or OneDrive.
-// Both give the app the same Source shape: load, refresh, photoUrl, save.
+// Both give the app the same Source shape: load, refresh, photoUrl, save, and
+// movePiece and deletePiece; OneDrive can also addPhotos (`canAdd`).
+import { classifyError } from './errors.js';
 import { drawItem, sampleData } from './sample.js';
-import { isReadable, mergeListing, parseData } from './store.js';
+import { addPiece, isReadable, mergeListing, parseData, removePieces } from './store.js';
 
 // Numbered so a sample saved by an older version (before the diary and the new folders) is replaced.
 const SAMPLE_KEY = 'outfit-picker:sample-3';
@@ -14,8 +16,12 @@ async function inBatches(list, size, fn) {
   for (let i = 0; i < list.length; i += size) await Promise.all(list.slice(i, i + size).map(fn));
 }
 
-export function createOneDriveSource({ graph, detect, storage, today }) {
+// `photos` does the browser's part of adding photos: shrink(file) → smaller blob,
+// color(blob) → its main color, url(blob) → an address to show it, name(n) → a file name.
+export function createOneDriveSource({ graph, detect, storage, today, photos }) {
   const thumbs = new Map();
+  // Photos added from this phone, shown from the phone until OneDrive has made a preview.
+  const added = new Map();
 
   async function save(text) {
     storage.setItem(PENDING_KEY, text);
@@ -67,9 +73,52 @@ export function createOneDriveSource({ graph, detect, storage, today }) {
       return { newIds };
     },
     photoUrl(id) {
-      return thumbs.get(id) ?? null;
+      return thumbs.get(id) ?? added.get(id) ?? null;
     },
     save,
+    canAdd: true,
+    // Uploads the photos into the folder for `category`, one at a time, and adds them as
+    // unlabeled pieces. A failed upload is counted and skipped.
+    async addPhotos(data, category, files) {
+      const newIds = [];
+      let failed = 0;
+      for (const [i, file] of files.entries()) {
+        let blob = file;
+        try {
+          blob = await photos.shrink(file);
+        } catch {
+          /* a photo the browser can't read is sent as it is; OneDrive still previews it */
+        }
+        let entry;
+        try {
+          entry = await graph.uploadPhoto(category, photos.name(i + 1), blob);
+        } catch (e) {
+          // Signing in again can't wait for the other photos.
+          if (['signin', 'redirecting'].includes(classifyError(e))) throw e;
+          failed += 1;
+          continue;
+        }
+        addPiece(data, entry, today);
+        added.set(entry.id, photos.url(blob));
+        try {
+          data.items[entry.id].color = await photos.color(blob);
+        } catch {
+          /* she picks the color while labeling */
+        }
+        newIds.push(entry.id);
+      }
+      return { newIds, failed };
+    },
+    // Both change OneDrive first, so the piece stays as it was if that fails.
+    async movePiece(data, id, category) {
+      const { fileName } = await graph.movePhoto(id, category, data.items[id].fileName);
+      Object.assign(data.items[id], { category, fileName });
+    },
+    async deletePiece(data, id) {
+      await graph.deletePhoto(id);
+      removePieces(data, [id]);
+      added.delete(id);
+    },
   };
 }
 
@@ -91,6 +140,14 @@ export function createSampleSource({ storage, today }) {
     },
     async save(text) {
       storage.setItem(SAMPLE_KEY, text);
+    },
+    // Sample clothes are drawings, so there are no photos to add.
+    canAdd: false,
+    async movePiece(data, id, category) {
+      data.items[id].category = category;
+    },
+    async deletePiece(data, id) {
+      removePieces(data, [id]);
     },
   };
 }

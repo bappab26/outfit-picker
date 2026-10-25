@@ -6,6 +6,7 @@ import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
 import { learnHabits, styleSummary } from './habits.js';
 import { createGraph, GraphError } from './onedrive.js';
+import { photoFileName, shrinkPhoto } from './photos.js';
 import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
@@ -56,6 +57,12 @@ const state = {
   label: { mode: 'new', queue: [], index: 0, id: null },
   // True while she is typing a new name for the app.
   renaming: false,
+  // Wardrobe and labeling screens: picking a folder to add photos to, asking "Delete this
+  // piece?", what OneDrive is busy doing ("Adding 3 photos…"), and a note when that failed.
+  adding: false,
+  confirmDelete: false,
+  busy: null,
+  note: null,
 };
 
 function displayName() {
@@ -181,6 +188,11 @@ const homeActions = {
   openWardrobe() {
     show('wardrobe');
   },
+  addClothes() {
+    show('wardrobe');
+    state.adding = true;
+    render();
+  },
   async exitSample() {
     await state.saver.flush();
     storage.removeItem(MODE_KEY);
@@ -214,6 +226,30 @@ function setLabel(field, value) {
   else render();
 }
 
+// A change from a button that talks to OneDrive, showing `text` while it runs. Sign-in problems
+// go to the sign-in screen, as in run(); other failures leave a note on the same screen.
+// True if it worked.
+async function busyChange(text, step) {
+  state.busy = text;
+  state.note = null;
+  render();
+  try {
+    await step();
+    return true;
+  } catch (e) {
+    const kind = classifyError(e, { online: navigator.onLine !== false });
+    if (kind === 'signin') {
+      state.signinNote = 'Please sign in again.';
+      show('signin');
+    } else if (kind !== 'redirecting') {
+      state.note = kind === 'offline' ? "You're offline. Connect and try again." : "OneDrive didn't answer. Try again in a moment.";
+    }
+    return false;
+  } finally {
+    state.busy = null;
+  }
+}
+
 const labelActions = {
   setColor: (color) => setLabel('color', color),
   setWarmth: (warmth) => setLabel('warmth', warmth),
@@ -221,6 +257,32 @@ const labelActions = {
   skip: nextPiece,
   done: () => show('wardrobe'),
   back: () => (state.label.mode === 'new' ? goHome() : show('wardrobe')),
+  async move(category) {
+    const id = labelId();
+    if (state.busy || state.data.items[id].category === category) return;
+    if (await busyChange('Moving…', () => state.source.movePiece(state.data, id, category))) changed();
+    if (state.screen === 'label') render();
+  },
+  askDelete() {
+    state.confirmDelete = true;
+    render();
+    root.querySelector('.confirm')?.scrollIntoView({ block: 'nearest' });
+  },
+  cancelDelete() {
+    state.confirmDelete = false;
+    render();
+  },
+  async confirmDelete() {
+    const id = labelId();
+    if (state.busy) return;
+    if (await busyChange('Deleting…', () => state.source.deletePiece(state.data, id))) {
+      changed();
+      show('wardrobe');
+    } else if (state.screen === 'label') {
+      state.confirmDelete = false;
+      render();
+    }
+  },
 };
 
 const wardrobeActions = {
@@ -242,6 +304,38 @@ const wardrobeActions = {
     if (state.screen === 'wardrobe') render();
   },
   back: goHome,
+  startAdding() {
+    state.adding = true;
+    state.note = null;
+    render();
+  },
+  cancelAdding() {
+    state.adding = false;
+    render();
+  },
+  async addPhotos(category, files) {
+    if (!files.length || state.busy) return;
+    state.adding = false;
+    const n = files.length;
+    let result = { newIds: [], failed: n };
+    await busyChange(n === 1 ? 'Adding 1 photo…' : `Adding ${n} photos…`, async () => {
+      result = await state.source.addPhotos(state.data, category, files);
+    });
+    changed(); // even after a failure, the photos sent before it are in OneDrive and in the data
+    if (state.screen !== 'wardrobe') return;
+    if (result.failed && !state.note) {
+      state.note = result.newIds.length
+        ? `Added ${result.newIds.length} of ${n} photos. Check your connection and try again for the rest.`
+        : "Couldn't add the photos. Check your connection and try again.";
+    }
+    if (state.note || !result.newIds.length) {
+      render();
+      return;
+    }
+    // Straight on to labeling the new pieces.
+    state.label = { mode: 'new', queue: result.newIds, index: 0, id: null };
+    show('label');
+  },
 };
 
 // ----- Modes -----
@@ -276,7 +370,13 @@ async function enterOneDrive() {
   show('loading');
   const graph = createGraph({ getToken });
   const detect = async (entry) => detectImageColor(await graph.fetchImageBlob(entry));
-  await openWardrobeData(createOneDriveSource({ graph, detect, storage, today: todayISO() }));
+  const photos = {
+    shrink: shrinkPhoto,
+    color: detectImageColor,
+    url: (blob) => URL.createObjectURL(blob),
+    name: (n) => photoFileName(new Date(), n),
+  };
+  await openWardrobeData(createOneDriveSource({ graph, detect, storage, today: todayISO(), photos }));
   storage.setItem(MODE_KEY, 'onedrive');
   if (accountName()) storage.setItem(ACCOUNT_KEY, accountName());
   state.signinNote = null;
@@ -351,6 +451,7 @@ function renderHomeScreen() {
     sampleMode: state.source.mode === 'sample',
     saveError: state.saveError,
     hasLabeled: labeledItems(state.data).length > 0,
+    canAdd: state.source.canAdd,
   }, homeActions);
 }
 
@@ -368,6 +469,10 @@ function renderLabelScreen() {
     photoUrl: state.source.photoUrl(id),
     mode: state.label.mode,
     remaining: state.label.queue.length - state.label.index,
+    sampleMode: state.source.mode === 'sample',
+    confirmDelete: state.confirmDelete,
+    busy: state.busy,
+    note: state.note,
   }, labelActions);
 }
 
@@ -378,6 +483,10 @@ function renderWardrobeScreen() {
     canRefresh: state.source.mode === 'onedrive',
     refreshing: state.refreshing,
     style: styleSummary(learnHabits(state.data, todayISO())),
+    canAdd: state.source.canAdd,
+    adding: state.adding,
+    busy: state.busy,
+    note: state.note,
   }, wardrobeActions);
 }
 
@@ -400,6 +509,7 @@ function render() {
 // label) doesn't, and neither do taps that only redraw the screen (render).
 function show(screen) {
   const isNew = screen !== state.screen;
+  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null });
   state.screen = screen;
   render();
   window.scrollTo(0, 0);

@@ -18,6 +18,10 @@ Of the three outfits, the last one always has a piece she hasn't worn in 30 days
 (when there is one), marked **Not worn in a while**. 👍 and **Wore this** can be tapped again
 to take them back; after a 👎, **Undo 👎** brings the outfit back.
 
+Clothes can be added from the app (**Wardrobe → Add clothes**: pick a folder, then take or
+choose photos) or by saving photos into the OneDrive folders. Tapping a piece in Wardrobe
+lets her move it to another folder or delete it.
+
 The app also learns her style from what she taps (see "How it learns her style" below).
 
 (The Microsoft app registration below is still called "Outfit Picker", which is why the
@@ -145,7 +149,9 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
   to leave.
 - **Your own account:** tap **Sign in with Microsoft** and sign in with your own Microsoft
   account. The app creates `Wardrobe` and its 11 folders in *your* OneDrive. Add a few
-  photos, tap **Refresh** on the Wardrobe screen, label them and check the outfits.
+  photos with **Wardrobe → Add clothes** (or save them into the folders and tap **Refresh**),
+  label them and check the outfits. Try moving one to another folder and deleting one: the
+  photo should move in OneDrive, or land in the OneDrive recycle bin.
   Test on your computer (`http://localhost:8080/`) and on your phone (the GitHub Pages
   address).
 - **Tested with an earlier version?** Jackets and coats used to go in one `Outerwear`
@@ -179,11 +185,16 @@ If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm te
    is chosen here (an iPhone lets her type it); renaming the app inside it later doesn't
    change the icon's name.
 4. Tell her how to add clothes:
-   - Photos go in OneDrive under `Wardrobe`, in the right folder: `Tops` (T-shirts,
-     blouses, shirts), `Hoodies`, `Sweatshirts`, `Pants` (trousers), `Jeans`, `Shorts`,
-     `Skirts`, `Dresses` (dresses and jumpsuits), `Shoes`, `Jackets`, `Coats`.
+   - In the app: **Wardrobe → Add clothes**, pick the folder, then take a photo or pick
+     several from her gallery. The app shrinks them, saves them in OneDrive and opens the
+     labeling screen.
+   - Or in OneDrive, under `Wardrobe`, in the right folder: `Tops` (T-shirts, blouses,
+     shirts), `Hoodies`, `Sweatshirts`, `Pants` (trousers), `Jeans`, `Shorts`, `Skirts`,
+     `Dresses` (dresses and jumpsuits), `Shoes`, `Jackets`, `Coats`. Then open the app and
+     label the new pieces.
    - One piece per photo, on a plain background.
-   - Then open the app and label the new pieces (two taps each).
+   - A piece in the wrong folder: tap it in Wardrobe and pick another **Folder**. To remove
+     one, tap it and **Delete piece**.
 
 ## How it learns her style
 
@@ -218,7 +229,9 @@ a failing check after a deliberate change means that check needs updating too.
 ## Start over
 
 Delete `Apps/Outfit Picker/data.json` in her OneDrive. The app then finds all the photos
-again as unlabeled pieces, and forgets her habits. Her photos are never changed or deleted by the app.
+again as unlabeled pieces, and forgets her habits. The app only changes her photos when she
+asks: **Add clothes** saves new ones, **Folder** moves one, and **Delete piece** sends one to
+the OneDrive recycle bin (where it can be brought back for a while).
 
 If `data.json` ever gets damaged (for example by editing it by hand), the app saves a copy
 named `data-backup-<date>.json` next to it before starting fresh. OneDrive's own version
@@ -231,6 +244,8 @@ On a French OneDrive the `Apps` folder may be called `Applications`.
   (Setup, step 4) match the address in the browser exactly, including the `/` at the end.
 - **"Sign in with Microsoft" is greyed out:** the app ID in `js/config.js` hasn't been
   filled in.
+- **"Couldn't add the photos":** the phone lost its connection while sending them. The ones
+  already sent are in the app; add the others again.
 - **New photos don't show up:** tap **Refresh** on the Wardrobe screen. Photos must be in
   one of the 11 folders, not directly in `Wardrobe`.
 - **A photo shows its file name instead of the picture:** OneDrive hasn't made a preview

@@ -143,3 +143,50 @@ test('fetchImageBlob can download the photo through its download address', async
   assert.equal(requests[0].headers.Authorization, 'Bearer test-token');
   assert.equal(requests[1].headers.Authorization, undefined);
 });
+
+test('uploadPhoto saves the photo into its Wardrobe folder, never over another file', async () => {
+  const { graph, requests } = graphWith([[(r) => r.method === 'PUT', () => json({ id: 'new1', name: 'photo.jpg' }, 201)]]);
+  const blob = new Blob(['jpeg bytes'], { type: 'image/jpeg' });
+  const added = await graph.uploadPhoto('hoodies', 'photo.jpg', blob);
+  assert.deepEqual(added, { id: 'new1', category: 'hoodies', fileName: 'photo.jpg', thumbUrl: null });
+  const put = requests.find((r) => r.method === 'PUT');
+  assert.equal(put.url, `${G}/me/drive/root:/Wardrobe/Hoodies/photo.jpg:/content?@microsoft.graph.conflictBehavior=rename`);
+  assert.equal(put.headers['Content-Type'], 'image/jpeg');
+  assert.equal(put.body, blob);
+});
+
+test('movePhoto moves the photo into another Wardrobe folder', async () => {
+  const { graph, requests } = graphWith([
+    [(r) => r.method === 'GET' && r.url === `${G}/me/drive/root:/Wardrobe/Sweatshirts`, () => json({ id: 'folder-sw' })],
+    [(r) => r.method === 'PATCH', () => json({ id: 'p1', name: 'IMG_1.jpg' })],
+  ]);
+  assert.deepEqual(await graph.movePhoto('p1', 'sweatshirts', 'IMG_1.jpg'), { fileName: 'IMG_1.jpg' });
+  const patch = requests.find((r) => r.method === 'PATCH');
+  assert.equal(patch.url, `${G}/me/drive/items/p1`);
+  assert.deepEqual(JSON.parse(patch.body), { parentReference: { id: 'folder-sw' } });
+});
+
+test('movePhoto renames the photo when the folder already has one with that name', async () => {
+  const { graph, requests } = graphWith([
+    [(r) => r.method === 'GET' && r.url.endsWith('/Wardrobe/Sweatshirts'), () => json({ id: 'folder-sw' })],
+    [(r) => r.method === 'PATCH' && !JSON.parse(r.body).name, () => json({ error: { code: 'nameAlreadyExists' } }, 409)],
+    [(r) => r.method === 'PATCH', (r) => json({ id: 'p1', name: JSON.parse(r.body).name })],
+  ]);
+  assert.deepEqual(await graph.movePhoto('p1', 'sweatshirts', 'IMG_1.jpg'), { fileName: 'IMG_1 (2).jpg' });
+  const patches = requests.filter((r) => r.method === 'PATCH').map((r) => JSON.parse(r.body));
+  assert.deepEqual(patches[1], { parentReference: { id: 'folder-sw' }, name: 'IMG_1 (2).jpg' });
+});
+
+test('deletePhoto sends the photo to the OneDrive recycle bin; one already gone is fine', async () => {
+  const { graph, requests } = graphWith([
+    [(r) => r.method === 'DELETE' && r.url.endsWith('/items/p1'), () => new Response(null, { status: 204 })],
+  ]);
+  await graph.deletePhoto('p1');
+  await assert.doesNotReject(graph.deletePhoto('gone'));
+  assert.deepEqual(requests.filter((r) => r.method === 'DELETE').map((r) => r.url), [`${G}/me/drive/items/p1`, `${G}/me/drive/items/gone`]);
+});
+
+test('deletePhoto fails when OneDrive cannot be reached', async () => {
+  const graph = createGraph({ getToken: async () => 't', fetchFn: async () => { throw new TypeError('Failed to fetch'); } });
+  await assert.rejects(graph.deletePhoto('p1'), (e) => e instanceof GraphError && e.status === 0);
+});
