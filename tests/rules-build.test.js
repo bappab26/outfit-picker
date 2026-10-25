@@ -141,3 +141,15 @@ test('with a ranking, only the best outfits get a jacket or coat', () => {
   const rank = (o) => (o.items.some((i) => i.id === 't2') ? 1 : 0);
   assert.deepEqual(keys(buildOutfits(items, ctx(), { rank, keep: 1 })), ['j|p|s|t2', 'p|s|t2']);
 });
+
+test('with a ranking, the kept outfits do not all share the same pieces', () => {
+  const tops = Array.from({ length: 6 }, (_, i) => m(`t${i}`, 'tops'));
+  const pants = Array.from({ length: 6 }, (_, i) => m(`p${i}`, 'pants'));
+  const shoes = ['s0', 's1', 's2', 's3'].map((id) => m(id, 'shoes'));
+  // Shoes s0 make every outfit score higher, so without a limit all 16 kept outfits would have them.
+  const rank = (o) => (o.items.some((i) => i.id === 's0') ? 1 : 0);
+  const kept = buildOutfits([...tops, ...pants, ...shoes], ctx(), { rank, keep: 16 }).outfits;
+  const shoesUsed = new Set(kept.map((o) => o.items.find((i) => i.category === 'shoes').id));
+  assert.ok(shoesUsed.size >= 3, [...shoesUsed].join());
+  assert.ok(kept.some((o) => o.items.some((i) => i.id === 's0')));
+});

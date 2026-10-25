@@ -92,14 +92,24 @@ function boldColors(pieces) {
   return bold;
 }
 
-// The `count` lists of pieces that `rank` scores highest.
-function best(lists, count, rank) {
+// The `count` lists of pieces that `rank` scores highest. With `spread`, no piece is in more than
+// an eighth of them, so that outfits sharing no piece (the 3 cards) can still be found among them.
+function best(lists, count, rank, { spread = false } = {}) {
   if (lists.length <= count) return lists;
-  return lists
+  const ranked = lists
     .map((pieces) => ({ pieces, score: rank(makeOutfit(pieces)) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count)
-    .map(({ pieces }) => pieces);
+    .sort((a, b) => b.score - a.score);
+  if (!spread) return ranked.slice(0, count).map(({ pieces }) => pieces);
+  const perPiece = Math.ceil(count / 8);
+  const uses = new Map();
+  const kept = [];
+  for (const { pieces } of ranked) {
+    if (kept.length >= count) break;
+    if (pieces.some((p) => (uses.get(p.id) ?? 0) >= perPiece)) continue;
+    kept.push(pieces);
+    for (const p of pieces) uses.set(p.id, (uses.get(p.id) ?? 0) + 1);
+  }
+  return kept;
 }
 
 // Every outfit that fits the occasion and temperature. `items` must be fully labeled.
@@ -113,7 +123,7 @@ export function buildOutfits(items, { occasion, temperature }, { rank = null, un
   const dresses = of('dress');
   const shoes = of('shoes');
   const outers = of('outer').filter((o) => OUTER_WARMTHS[temperature].includes(o.warmth));
-  const bestOf = (lists, count) => (rank ? best(lists, count, rank) : lists);
+  const bestOf = (lists, count, options) => (rank ? best(lists, count, rank, options) : lists);
 
   // A top, a hoodie or sweatshirt on its own, or (unless it's hot) a hoodie or sweatshirt over a top.
   const uppers = [...tops, ...layers].map((p) => [p]);
@@ -126,7 +136,7 @@ export function buildOutfits(items, { occasion, temperature }, { rank = null, un
     for (const u of uppers) for (const b of bottoms) bases.push([...u, b, s]);
     for (const d of dresses) bases.push([d, s]);
   }
-  bases = bestOf(bases.filter((base) => boldColors(base).size <= SETTINGS.maxBoldColors), keep);
+  bases = bestOf(bases.filter((base) => boldColors(base).size <= SETTINGS.maxBoldColors), keep, { spread: true });
 
   const coatRequired = needsCoat({ occasion, temperature });
   let extras;
@@ -174,6 +184,11 @@ function isRecent(item, today) {
   return Boolean(item.lastWorn) && daysBetween(item.lastWorn, today) < SETTINGS.recentDays;
 }
 
+// The bonus for `count` forgotten pieces in an outfit of `size` pieces, counted as if it had 3.
+function forgottenBonus(count, size) {
+  return (SETTINGS.forgottenBonus * count * 3) / size;
+}
+
 const NO_HABITS = { colorPairs: {}, colors: {}, shape: {}, dressedUp: {} };
 
 // Spec §3.4: colors and taste per pair, the outfit's own penalty, freshness per piece, a little randomness,
@@ -197,7 +212,7 @@ function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits =
   }
   // Every just-worn piece loses points; the forgotten-piece bonus is scaled to 3 pieces like the pairs.
   const recent = pieces.map((p) => (isRecent(p, today) ? SETTINGS.recentPenalty : 0));
-  const bonus = pieces.map((p) => (boostForgotten && isForgotten(p, today) ? SETTINGS.forgottenBonus : 0));
+  const forgottenPiece = pieces.map((p) => (boostForgotten && isForgotten(p, today) ? 1 : 0));
   const shapeHabits = learned.shape[occasion] ?? {};
   const styleHabits = learned.dressedUp[occasion] ?? {};
   // Every outfit has exactly one dress or bottom, so shape points add up per piece.
@@ -212,7 +227,7 @@ function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits =
     const ps = outfit.items;
     let score = 0;
     let pairPoints = 0;
-    let forgottenPoints = 0;
+    let forgottenCount = 0;
     // Habits are averaged over pairs and pieces, so an outfit doesn't gain just by having a coat.
     let pairHabit = 0;
     let colorHabit = 0;
@@ -221,7 +236,7 @@ function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits =
     for (let i = 0; i < ps.length; i++) {
       const a = ps[i].index;
       score += recent[a] + shapePoints[a];
-      forgottenPoints += bonus[a];
+      forgottenCount += forgottenPiece[a];
       colorHabit += colorHabits[a];
       if (isMain[a]) {
         styleHabit += styleHabitsOf[a];
@@ -236,7 +251,7 @@ function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits =
     // Color and taste points count as if the outfit had 3 pairs (top, bottom, shoes), so a hoodie
     // and a jacket don't win just by adding pairs, and a dress with shoes (1 pair) isn't behind.
     score += (pairPoints * 3) / pairCount;
-    score += (forgottenPoints * 3) / ps.length;
+    score += forgottenBonus(forgottenCount, ps.length);
     score += (points.colorPairs * pairHabit) / pairCount;
     score += (points.colors * colorHabit) / ps.length;
     if (mains) score += (points.dressedUp * styleHabit) / mains;
@@ -266,44 +281,54 @@ export function pickOutfits(items, data, {
   const used = new Set(avoidItemIds);
   const all = items.filter((i) => !used.has(i.id));
 
-  // The outfits made from the pieces still free, best first, by the score with or
-  // without the forgotten-piece bonus.
+  // The outfits made from the pieces still free, with their scores, best first. With
+  // `boostForgotten`, the forgotten-piece bonus is in the score (and so in how a big wardrobe is cut down).
   const rankFree = (boostForgotten) => {
     const pieces = withIndexes(all.filter((i) => !used.has(i.id)));
     const score = makeScorer(pieces, data, { today, boostForgotten, rng, habits, occasion });
     return buildOutfits(pieces, ctx, { rank: score }).outfits
       .map((outfit) => ({ outfit, score: score(outfit) }))
-      .sort((a, b) => b.score - a.score)
-      .map(({ outfit }) => outfit);
+      .sort((a, b) => b.score - a.score);
   };
 
-  // Up to `upTo` outfits that pass `fits`, sharing no piece. Building cuts a big wardrobe down,
-  // so when the list runs out of outfits that share no piece, it is built again from what's left.
-  const pick = (boostForgotten, upTo, fits) => {
+  // Adds to `picked` (up to `upTo`) the best outfits in `ranked` that pass `fits` and share no piece.
+  const takeFrom = (picked, ranked, upTo, fits, allowExcluded) => {
+    let added = false;
+    for (const { outfit } of ranked) {
+      if (picked.length >= upTo) break;
+      if (!fits(outfit) || (!allowExcluded && excluded.has(outfit.key))) continue;
+      if (outfit.items.some((i) => used.has(i.id))) continue;
+      picked.push(outfit);
+      for (const i of outfit.items) used.add(i.id);
+      added = true;
+    }
+    return added;
+  };
+
+  // Up to `upTo` outfits, from `ranked` first. Building cuts a big wardrobe down, so when that
+  // list runs out of outfits that share no piece, it is built again from the pieces left.
+  const pick = (ranked, upTo, fits, boostForgotten) => {
     const picked = [];
-    const takeFrom = (ranked, allowExcluded) => {
-      let added = false;
-      for (const outfit of ranked) {
-        if (picked.length >= upTo) break;
-        if (!fits(outfit) || (!allowExcluded && excluded.has(outfit.key))) continue;
-        if (outfit.items.some((i) => used.has(i.id))) continue;
-        picked.push(outfit);
-        for (const i of outfit.items) used.add(i.id);
-        added = true;
-      }
-      return added;
-    };
-    while (picked.length < upTo && takeFrom(rankFree(boostForgotten), false));
-    if (picked.length < upTo && excluded.size) takeFrom(rankFree(boostForgotten), true);
+    takeFrom(picked, ranked, upTo, fits, false);
+    while (picked.length < upTo && takeFrom(picked, rankFree(boostForgotten), upTo, fits, false));
+    if (picked.length < upTo && excluded.size) takeFrom(picked, rankFree(boostForgotten), upTo, fits, true);
     return picked;
   };
 
+  // One list serves both kinds of cards; the forgotten-piece card ranks it with the bonus added.
+  const ranked = rankFree(false);
   const forgotten = new Set(all.filter((i) => isForgotten(i, today)).map((i) => i.id));
-  const forgottenPicks = forgottenCards > 0 && forgotten.size
-    ? pick(true, Math.min(forgottenCards, count), (o) => o.items.some((i) => forgotten.has(i.id)))
-    : [];
+  const forgottenIn = (outfit) => outfit.items.filter((i) => forgotten.has(i.id)).length;
+  let forgottenPicks = [];
+  if (forgottenCards > 0 && forgotten.size) {
+    const boosted = ranked
+      .filter(({ outfit }) => forgottenIn(outfit) > 0)
+      .map(({ outfit, score }) => ({ outfit, score: score + forgottenBonus(forgottenIn(outfit), outfit.items.length) }))
+      .sort((a, b) => b.score - a.score);
+    forgottenPicks = pick(boosted, Math.min(forgottenCards, count), (o) => forgottenIn(o) > 0, true);
+  }
   for (const outfit of forgottenPicks) outfit.forgotten = true;
-  const ordinary = pick(false, count - forgottenPicks.length, () => true);
+  const ordinary = pick(ranked, count - forgottenPicks.length, () => true, false);
   const outfits = [...ordinary, ...forgottenPicks];
   return { outfits, notes: outfitNotes(all, ctx, outfits.length > 0) };
 }

@@ -141,8 +141,9 @@ From labeled pieces only:
   - **Hot:** none.
 - **Speed:** a big wardrobe makes too many outfits to score on a phone. While picking, only
   the 4 best-scoring tops go under each hoodie or sweatshirt, and only the 500 best outfits
-  get a jacket or coat. If that leaves too few outfits that share no piece, the list is built
-  again from the pieces not used yet (see 3.5).
+  get a jacket or coat, with no piece in more than an eighth of those 500. If that still leaves
+  too few outfits that share no piece, the list is built again from the pieces not used yet
+  (see 3.5). One list serves both the ordinary and the Not worn in a while outfits.
 
 ### 3.3 Step 2: remove outfits that don't fit
 
