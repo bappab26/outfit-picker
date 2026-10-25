@@ -82,11 +82,19 @@ and a French interface (the interface is English).
 - **Temperature** choice: Cold · Mild · Hot. (There is no weather lookup. This tap decides
   sweater-and-coat versus t-shirt.)
 - Both choices are remembered from last time.
-- **3 outfit cards.** Each card shows the photos of its pieces (see 3.2): a top, hoodie or
-  sweatshirt, or a hoodie or sweatshirt over a top; pants, jeans, shorts or a skirt; shoes;
-  or a dress and shoes; plus a jacket or coat when the rules add one.
-- The last card has a piece she hasn't worn in 30 or more days, when she has one, and is
-  marked **Not worn in a while** (see 3.5). There is no switch for this.
+- **A deck of outfit cards**, one at a time, with the next two peeking out behind it. Each
+  card shows the photos of its pieces in 2 columns (3 for a 5-piece outfit; see 3.2): a top,
+  hoodie or sweatshirt, or a hoodie or sweatshirt over a top; pants, jeans, shorts or a skirt;
+  shoes; or a dress and shoes; plus a jacket or coat when the rules add one.
+  - **Swipe left** (or **›**) for the next card, **swipe right** (or **‹**) for the previous
+    one. The card follows her finger; a drag longer than a quarter of the card, or a quick
+    flick of at least 50 pixels, sends it off the side, otherwise it springs back. Mostly
+    up-and-down drags scroll the page. A drag that ends on a button doesn't press it.
+  - Swiping records nothing; only the buttons do.
+  - The deck starts with the 3 outfits of 3.5. Whenever fewer than 2 cards are left after the
+    one shown, 3 more are picked that aren't in the deck yet, until there are none left.
+- Every batch of 3 has one card with a piece she hasn't worn in 30 or more days, when she has
+  one, marked **Not worn in a while** (see 3.5). There is no switch for this.
 - Each card has three buttons:
   - **👍** marks the outfit as liked (button stays highlighted). Tapping it again takes it back.
   - **👎** lowers the outfit's score and replaces the card with the next-best outfit. The new
@@ -95,7 +103,7 @@ and a French interface (the interface is English).
   - **Wore this** records today's date on every piece. The button changes to "Worn today ✓";
     tapping it again takes it back and restores the earlier dates.
   - Undo works while the cards are on screen; it is not kept after the app closes.
-- **Shuffle** replaces all 3 cards with 3 new ones.
+- **Shuffle**, or changing the occasion or temperature, starts a new deck at its first card.
 - At the bottom: "Version <date> · by bap bap" (also on the sign-in screen).
 - Zooming is turned off (no pinch or double-tap zoom).
 
@@ -376,6 +384,8 @@ js/feedback.js           Apply 👍, 👎 and Wore this to the data
 js/habits.js             Learn her habits from the diary (section 3.6)
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
+js/deck.js               The deck of outfit cards: next, previous, adding more
+js/ui/swipe.js           Swiping a card sideways
 js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
 tests/*.test.js          Automated checks

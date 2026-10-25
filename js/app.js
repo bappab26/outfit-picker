@@ -2,6 +2,7 @@
 import { accountName, getToken, initAuth, isConfigured, isLibraryLoaded, signIn } from './auth.js';
 import { detectImageColor } from './colors.js';
 import { todayISO } from './dates.js';
+import { createDeck, fillAhead, move, shownKeys } from './deck.js';
 import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
 import { learnHabits, styleSummary } from './habits.js';
@@ -45,7 +46,10 @@ const state = {
   source: null,
   data: null,
   saver: null,
-  cards: [],
+  // The home screen's outfit cards, one shown at a time (deck.js). `deckEnter` is 'next' or
+  // 'previous' right after a move, so the new front card comes in from the right side.
+  deck: createDeck([]),
+  deckEnter: null,
   notes: [],
   saveError: false,
   refreshing: false,
@@ -96,8 +100,17 @@ function newCard(outfit) {
 
 function recompute(extra) {
   const { outfits, notes } = pickOutfits(labeledItems(state.data), state.data, pickOptions(extra));
-  state.cards = outfits.map(newCard);
+  state.deck = createDeck(outfits.map(newCard));
   state.notes = notes;
+}
+
+// More cards for the end of the deck: outfits it doesn't have yet (none once she has seen
+// them all; Shuffle then starts again).
+function moreCards() {
+  const shown = new Set(shownKeys(state.deck));
+  return pickOutfits(labeledItems(state.data), state.data, pickOptions({ exclude: [...shown] })).outfits
+    .filter((outfit) => !shown.has(outfit.key))
+    .map(newCard);
 }
 
 function changed() {
@@ -118,11 +131,22 @@ const homeActions = {
     render();
   },
   shuffle() {
-    recompute({ exclude: state.cards.filter((c) => c.outfit).map((c) => c.outfit.key) });
+    recompute({ exclude: shownKeys(state.deck) });
+    render();
+  },
+  next() {
+    if (!move(state.deck, 1)) return;
+    fillAhead(state.deck, 2, moreCards);
+    state.deckEnter = 'next';
+    render();
+  },
+  previous() {
+    if (!move(state.deck, -1)) return;
+    state.deckEnter = 'previous';
     render();
   },
   like(i) {
-    const c = state.cards[i];
+    const c = state.deck.cards[i];
     if (c.undoLike) c.undoLike();
     c.undoLike = c.undoLike ? null : like(state.data, c.outfit, choiceDay());
     c.liked = Boolean(c.undoLike);
@@ -131,7 +155,7 @@ const homeActions = {
     render();
   },
   wore(i) {
-    const c = state.cards[i];
+    const c = state.deck.cards[i];
     if (c.undoWore) c.undoWore();
     c.undoWore = c.undoWore ? null : woreThis(state.data, c.outfit, choiceDay());
     c.worn = Boolean(c.undoWore);
@@ -140,26 +164,24 @@ const homeActions = {
     render();
   },
   dislike(i) {
-    const before = state.cards[i];
+    const before = state.deck.cards[i];
     const undo = dislike(state.data, before.outfit, choiceDay());
-    const others = state.cards.filter((c, j) => j !== i && c.outfit);
     const [next] = pickOutfits(labeledItems(state.data), state.data, pickOptions({
-      exclude: [before.outfit.key, ...others.map((c) => c.outfit.key)],
-      avoidItemIds: others.flatMap((c) => c.outfit.items.map((item) => item.id)),
+      exclude: shownKeys(state.deck),
       count: 1,
       forgottenCards: before.forgotten ? 1 : 0,
     })).outfits;
     const undoDislike = { before, undo };
     // Never put the outfit she just turned down straight back on screen.
-    if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike };
-    else state.cards[i] = { outfit: null, undoDislike };
+    if (next && next.key !== before.outfit.key) state.deck.cards[i] = { ...newCard(next), undoDislike };
+    else state.deck.cards[i] = { outfit: null, undoDislike };
     changed();
     render();
   },
   undoDislike(i) {
-    const { before, undo } = state.cards[i].undoDislike;
+    const { before, undo } = state.deck.cards[i].undoDislike;
     undo();
-    state.cards[i] = before;
+    state.deck.cards[i] = before;
     changed();
     render();
   },
@@ -439,12 +461,20 @@ function renderError() {
     h('button', { class: 'primary', onclick: () => state.error.retry() }, 'Retry')));
 }
 
+// The way the deck just moved, once: redrawing for a tap doesn't slide the card in again.
+function takeDeckEnter() {
+  const enter = state.deckEnter;
+  state.deckEnter = null;
+  return enter;
+}
+
 function renderHomeScreen() {
   renderHome(root, {
     settings: state.data.settings,
     name: displayName(),
     renaming: state.renaming,
-    cards: state.cards,
+    deck: state.deck,
+    enter: takeDeckEnter(),
     notes: state.notes,
     newCount: unlabeledIds(state.data).length,
     photoUrl: (id) => state.source.photoUrl(id),

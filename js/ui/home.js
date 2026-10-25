@@ -1,7 +1,9 @@
-// Home screen: the app's name, occasion and temperature choices, then 3 outfit cards (spec §2).
+// Home screen: the app's name, occasion and temperature choices, then the deck of outfit
+// cards, one at a time, swiped or stepped through with ‹ › (spec §2).
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
 import { append, choices, h, photo } from './dom.js';
 import { OCCASION_LABELS, TEMPERATURE_LABELS, VERSION_LINE } from './labels.js';
+import { attachSwipe } from './swipe.js';
 
 const NOTE_TEXT = {
   'add-shoes': 'Add some shoes',
@@ -41,15 +43,15 @@ function appTitle(view, actions) {
   h('button', { type: 'button', onclick: actions.cancelRename }, 'Cancel'));
 }
 
-function card(c, i, view, actions) {
+function card(c, i, view, actions, extraClass) {
   const undo = c.undoDislike && h('button', { class: 'link undo', onclick: () => actions.undoDislike(i) }, 'Undo 👎');
   if (!c.outfit) {
     // She turned this outfit down and there was nothing else to show.
-    return h('article', { class: 'card' },
+    return h('article', { class: `card ${extraClass}` },
       h('div', { class: 'card-top' }, h('span', { class: 'hint' }, 'No other outfit to show.'), undo));
   }
   const { outfit, liked, worn } = c;
-  return h('article', { class: 'card' },
+  return h('article', { class: `card ${extraClass}` },
     (c.forgotten || undo) && h('div', { class: 'card-top' },
       c.forgotten && h('span', { class: 'tag' }, 'Not worn in a while'),
       undo),
@@ -69,6 +71,30 @@ function card(c, i, view, actions) {
         'aria-pressed': worn ? 'true' : 'false',
         onclick: () => actions.wore(i),
       }, worn ? 'Worn today ✓' : 'Wore this')));
+}
+
+// The front card with up to two more peeking out behind it, and ‹ › under them.
+function deck(view, actions) {
+  const { cards, index } = view.deck;
+  if (!cards.length) return null;
+  const behind = Math.min(2, cards.length - index - 1);
+  const hasPrevious = index > 0;
+  const hasNext = index < cards.length - 1;
+  const enter = view.enter ? ` enter-${view.enter}` : '';
+  const front = card(cards[index], index, view, actions, `deck-card${enter}`);
+  attachSwipe(front, {
+    allowed: (result) => (result === 'next' ? hasNext : hasPrevious),
+    onSwipe: (result) => (result === 'next' ? actions.next() : actions.previous()),
+  });
+  return [
+    h('div', { class: 'deck' },
+      Array.from({ length: behind }, (_, k) => h('div', { class: `deck-back b${behind - k}`, 'aria-hidden': 'true' })),
+      front),
+    h('div', { class: 'deck-nav' },
+      h('button', { class: 'icon', 'aria-label': 'Previous outfit', disabled: !hasPrevious, onclick: actions.previous }, '‹'),
+      h('span', { class: 'deck-hint' }, 'Swipe for more'),
+      h('button', { class: 'icon', 'aria-label': 'Next outfit', disabled: !hasNext, onclick: actions.next }, '›')),
+  ];
 }
 
 export function renderHome(root, view, actions) {
@@ -100,7 +126,7 @@ export function renderHome(root, view, actions) {
     choices('Temperature', TEMPERATURES, TEMPERATURE_LABELS, settings.temperature, actions.setTemperature),
     h('div', { class: 'toolbar' }, h('button', { class: 'shuffle', onclick: actions.shuffle }, 'Shuffle')),
     view.notes.map((note) => h('p', { class: 'note' }, NOTE_TEXT[note])),
-    view.cards.map((c, i) => card(c, i, view, actions)),
+    deck(view, actions),
     h('footer', { class: 'version' }, VERSION_LINE),
   );
 }
