@@ -276,6 +276,7 @@ body.no-scroll { overflow: hidden; }
 }
 .color-option { display: flex; align-items: center; gap: 8px; border-radius: 12px; }
 .color-option[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.warmth-hint { font-size: 13px; margin: -4px 0 12px; }
 .label-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 .label-actions.edit { justify-content: space-between; align-items: center; gap: 12px; }
 

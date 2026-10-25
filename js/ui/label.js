@@ -4,7 +4,7 @@ import { COLORS, SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
 import { STYLES, WARMTHS } from '../rules.js';
 import { append, choices, h, photo, swatch } from './dom.js';
-import { STYLE_LABELS, WARMTH_LABELS, colorLabel } from './labels.js';
+import { STYLE_LABELS, WARMTH_LABELS, colorLabel, warmthHint } from './labels.js';
 
 // Piece type → its OneDrive folder name, in the Wardrobe screen's order.
 const FOLDER_LABELS = Object.fromEntries(Object.entries(FOLDERS).map(([folder, category]) => [category, folder]));
@@ -47,6 +47,7 @@ export function renderLabel(root, view, actions) {
         item.color ? [swatch(SWATCHES[item.color]), colorLabel(item.color)] : 'Pick a color'),
       grid),
     choices('Warmth', WARMTHS, WARMTH_LABELS, item.warmth, actions.setWarmth),
+    h('p', { class: 'hint warmth-hint' }, warmthHint(item.category)),
     choices('Style', STYLES, STYLE_LABELS, item.style, actions.setStyle),
     mode === 'edit' && choices('Folder', Object.values(FOLDERS), FOLDER_LABELS, item.category, actions.move),
     view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),

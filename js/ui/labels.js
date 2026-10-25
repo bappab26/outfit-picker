@@ -12,6 +12,23 @@ export const WARMTH_LABELS = { light: 'Light', medium: 'Medium', warm: 'Warm' };
 export const STYLE_LABELS = { cozy: 'Cozy', casual: 'Casual', smart: 'Smart', dressy: 'Dressy' };
 export const SHAPE_LABELS = { dress: 'dresses', skirt: 'skirts', pants: 'pants', shorts: 'shorts' };
 
+// Shown under Warmth while labeling: what warmth changes for this kind of piece
+// (fitsTemperature and the jacket and coat rules in rules.js).
+export function warmthHint(category) {
+  const scale = 'Light = thin, Medium = in between, Warm = thick.';
+  if (category === 'jackets' || category === 'coats') {
+    return `${scale} Light ones are for mild days, Warm ones for cold days, Medium ones for both.`;
+  }
+  if (category === 'pants' || category === 'jeans' || category === 'shoes') {
+    return `${scale} Light ones stay home when it's cold, Warm ones when it's hot.`;
+  }
+  if (category === 'shorts') {
+    return `${scale} Light and Medium work the same; Warm ones stay home when it's hot. `
+      + "Shorts are never suggested when it's cold.";
+  }
+  return `${scale} For ${category}, Light and Medium work the same; only Warm ones stay home when it's hot.`;
+}
+
 export function colorLabel(color) {
   return color[0].toUpperCase() + color.slice(1);
 }
