@@ -9,6 +9,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 test('emptyData has the spec shape and defaults', () => {
   assert.deepEqual(emptyData(), {
     version: 1, items: {}, pairScores: {}, outfitPenalties: {}, diary: [],
+    stats: { worn: 0, celebrated: 0 },
     settings: { occasion: 'everyday', temperature: 'mild', name: null },
   });
 });
@@ -153,12 +154,27 @@ test('parseData keeps good diary lines and drops damaged ones', () => {
   assert.deepEqual(parseData(JSON.stringify({ version: 1, diary: 'lots' })).diary, []);
 });
 
-test('parseData keeps only the latest diary lines', () => {
-  const max = SETTINGS.habits.diaryMax;
-  const diary = Array.from({ length: max + 3 }, (_, i) => ({ date: '2026-10-20', kind: 'like', occasion: 'work', ids: [`p${i}`] }));
+test('parseData keeps only the latest diary lines, and more of the Wore this', () => {
+  const { diaryMax, woreMax } = SETTINGS.habits;
+  const lines = (kind, n) => Array.from({ length: n }, (_, i) => ({ date: '2026-10-20', kind, occasion: 'work', ids: [`${kind}${i}`] }));
+  const diary = [...lines('wore', woreMax + 2), ...lines('like', diaryMax + 3)];
   const data = parseData(JSON.stringify({ version: 1, diary }));
-  assert.equal(data.diary.length, max);
-  assert.deepEqual(data.diary[0].ids, ['p3']);
+  assert.equal(data.diary.length, woreMax + diaryMax);
+  assert.deepEqual(data.diary[0].ids, ['wore2']);
+  assert.deepEqual(data.diary[woreMax].ids, ['like3']);
+});
+
+test('parseData keeps her Wore this count', () => {
+  const data = parseData(JSON.stringify({ version: 1, stats: { worn: 12, celebrated: 10 } }));
+  assert.deepEqual(data.stats, { worn: 12, celebrated: 10 });
+});
+
+test('data saved before the count starts it from her diary, without a party for milestones passed', () => {
+  const wore = { date: '2026-10-20', kind: 'wore', occasion: 'work', ids: ['a'] };
+  const diary = [...Array(12).fill(wore), { ...wore, kind: 'like' }];
+  for (const stats of [undefined, { worn: -1, celebrated: 0 }, { worn: 'lots' }]) {
+    assert.deepEqual(parseData(JSON.stringify({ version: 1, diary, stats })).stats, { worn: 12, celebrated: 10 });
+  }
 });
 
 test('parseData keeps her name for the app, trimmed and at most 40 letters', () => {

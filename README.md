@@ -200,7 +200,7 @@ If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm te
 ## How it learns her style
 
 Every **Wore this**, 👍 and 👎 adds a line to a diary in her data file (her latest 500
-choices). From it the app learns four habits by plain counting, no AI:
+👍 and 👎, and her latest 800 Wore this). From it the app learns four habits by plain counting, no AI:
 
 - **Color combinations** she wears together, like black with pink.
 - **Favorite colors.**
@@ -217,6 +217,32 @@ shapes, not single pieces.
 After about 5 choices, **Wardrobe** shows **Your style so far**, for example
 "Often together: Black + Pink" or "Evening out: mostly dresses, Dressy". It's the easiest way
 to check that it's learning.
+
+## Easter eggs
+
+Hidden surprises for her to find (don't spoil them):
+
+- Tap **Version … · by bap bap** at the bottom of the home screen 7 times quickly: devil mode
+  (red, with horns on the name). 7 more taps turn it off.
+- Hold that line for about a second: a secret card with your note and her stats.
+- Rename the app with "angel" in the name: pastel colors and a halo.
+- About 1 outfit card in 150 is a **✨ Rare find**.
+- A piece she keeps turning down (in 5 👎 outfits, never liked or worn) gets
+  "Why do you even own this?".
+- April 20: confetti and a birthday card, once a year.
+- Between 2 and 5 a.m.: "Go to sleep…".
+- "One year ago today you wore this", from her diary.
+- Her 10th, 50th, 100th Wore this (then every 100th): confetti.
+
+To change them, see the top of `js/eggs.js` (birthday date, chances, counts) and
+`BIRTHDAY_TEXT`. The secret note is stored scrambled; to write a new one, run this with your
+text, then paste what it prints into `NOTE` in `js/eggs.js`:
+
+```
+node -e "console.log(Buffer.from('Your new note', 'utf8').toString('base64'))"
+```
+
+Everything here is public in the code, so keep names and years out of it.
 
 ## Adjust the rules
 

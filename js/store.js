@@ -1,6 +1,7 @@
 // The saved data (spec §4.5): its shape, repairing a damaged file, merging in
 // what's in OneDrive, and saving shortly after each change.
 import { COLORS } from './colors.js';
+import { lastMilestone } from './eggs.js';
 import { DIARY_KINDS } from './habits.js';
 import { CATEGORIES, OCCASIONS, STYLES, TEMPERATURES, WARMTHS } from './rules.js';
 import { SETTINGS } from './settings.js';
@@ -17,6 +18,8 @@ export function emptyData() {
     pairScores: {},
     outfitPenalties: {},
     diary: [],
+    // How many times she tapped Wore this, and the last milestone celebrated (eggs.js).
+    stats: { worn: 0, celebrated: 0 },
     // name: what she calls the app; null shows the default name.
     settings: { occasion: 'everyday', temperature: 'mild', name: null },
   };
@@ -36,16 +39,42 @@ export function tidyName(raw) {
   return name || null;
 }
 
-// Keeps the diary lines that make sense, newest last, at most diaryMax of them.
+// Drops the oldest lines beyond her latest diaryMax 👍 and 👎 and latest woreMax Wore this.
+// Changes `diary` in place.
+export function trimDiary(diary) {
+  const isWore = (line) => line.kind === 'wore';
+  const wore = diary.filter(isWore).length;
+  const extra = { wore: wore - SETTINGS.habits.woreMax, other: diary.length - wore - SETTINGS.habits.diaryMax };
+  for (let i = 0; i < diary.length && (extra.wore > 0 || extra.other > 0);) {
+    const group = isWore(diary[i]) ? 'wore' : 'other';
+    if (extra[group] > 0) {
+      diary.splice(i, 1);
+      extra[group] -= 1;
+    } else {
+      i += 1;
+    }
+  }
+  return diary;
+}
+
+// Keeps the diary lines that make sense, newest last (see trimDiary).
 function diaryLines(raw) {
   if (!Array.isArray(raw)) return [];
-  return raw
+  return trimDiary(raw
     .filter((line) => isObject(line) && isDate(line.date) && DIARY_KINDS.includes(line.kind)
       && OCCASIONS.includes(line.occasion) && Array.isArray(line.ids) && line.ids.length > 0
       && line.ids.every((id) => typeof id === 'string'))
-    .map(({ date, kind, occasion, ids }) => ({ date, kind, occasion, ids: [...ids] }))
-    .slice(-SETTINGS.habits.diaryMax);
+    .map(({ date, kind, occasion, ids }) => ({ date, kind, occasion, ids: [...ids] })));
 }
+
+// Her Wore this count from the diary, for data saved before the app counted them. Milestones
+// already passed count as celebrated, so updating the app doesn't throw a surprise party.
+export function statsFromDiary(diary) {
+  const worn = diary.filter((line) => line.kind === 'wore').length;
+  return { worn, celebrated: lastMilestone(worn) };
+}
+
+const isCount = (v) => Number.isInteger(v) && v >= 0;
 
 function readRaw(text) {
   if (text == null) return null;
@@ -87,6 +116,10 @@ export function parseData(text) {
   data.pairScores = numbersOnly(raw.pairScores);
   data.outfitPenalties = numbersOnly(raw.outfitPenalties);
   data.diary = diaryLines(raw.diary);
+  const stats = isObject(raw.stats) ? raw.stats : {};
+  data.stats = isCount(stats.worn) && isCount(stats.celebrated)
+    ? { worn: stats.worn, celebrated: stats.celebrated }
+    : statsFromDiary(data.diary);
   const settings = isObject(raw.settings) ? raw.settings : {};
   data.settings = {
     occasion: oneOf(OCCASIONS, settings.occasion, data.settings.occasion),

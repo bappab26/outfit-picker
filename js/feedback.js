@@ -3,6 +3,7 @@
 // `when` is { today, occasion }: the day and the occasion she chose the outfit for.
 import { outfitKey, pairKeys } from './keys.js';
 import { SETTINGS } from './settings.js';
+import { trimDiary } from './store.js';
 
 // Adds `points` to a score, removing it when it is back to nothing.
 function addTo(scores, key, points) {
@@ -19,8 +20,7 @@ function addToPairs(data, outfit, points) {
 function addToDiary(data, kind, outfit, { today, occasion }) {
   const line = { date: today, kind, occasion, ids: outfit.items.map((i) => i.id) };
   data.diary.push(line);
-  const extra = data.diary.length - SETTINGS.habits.diaryMax;
-  if (extra > 0) data.diary.splice(0, extra);
+  trimDiary(data.diary);
   return line;
 }
 
@@ -60,8 +60,10 @@ export function woreThis(data, outfit, when) {
     item.wearCount += 1;
   }
   addToPairs(data, outfit, SETTINGS.taste.wore);
+  data.stats.worn += 1;
   const line = addToDiary(data, 'wore', outfit, when);
   return () => {
+    data.stats.worn = Math.max(0, data.stats.worn - 1);
     for (const [id, lastWorn] of before) {
       const item = data.items[id];
       if (!item) continue;

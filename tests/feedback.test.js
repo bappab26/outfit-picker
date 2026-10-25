@@ -88,12 +88,36 @@ test('undoing one tap keeps the others', () => {
   assert.equal(data.items.t.wearCount, 1);
 });
 
-test('the diary keeps only the latest choices', () => {
+test('the diary keeps only the latest 👍 and 👎', () => {
   const { data, outfit } = setup();
   const max = SETTINGS.habits.diaryMax;
-  for (let i = 0; i < max; i++) data.diary.push({ date: '2026-01-01', kind: 'wore', occasion: 'work', ids: ['old'] });
+  data.diary.push({ date: '2026-01-01', kind: 'wore', occasion: 'work', ids: ['worn'] });
+  for (let i = 0; i < max; i++) data.diary.push({ date: '2026-01-01', kind: 'dislike', occasion: 'work', ids: [`old${i}`] });
   like(data, outfit, when);
-  assert.equal(data.diary.length, max);
+  assert.equal(data.diary.length, max + 1);
   assert.deepEqual(data.diary.at(-1).ids, ['t', 'p', 's']);
-  assert.deepEqual(data.diary[0].ids, ['old']);
+  assert.deepEqual(data.diary[0].ids, ['worn'], 'a Wore this is kept longer');
+  assert.deepEqual(data.diary[1].ids, ['old1']);
+});
+
+test('the diary keeps more Wore this, for "one year ago today"', () => {
+  const { data, outfit } = setup();
+  const max = SETTINGS.habits.woreMax;
+  assert.ok(max > SETTINGS.habits.diaryMax);
+  for (let i = 0; i < max; i++) data.diary.push({ date: '2026-01-01', kind: 'wore', occasion: 'work', ids: [`old${i}`] });
+  woreThis(data, outfit, when);
+  assert.equal(data.diary.length, max);
+  assert.deepEqual(data.diary[0].ids, ['old1']);
+  assert.deepEqual(data.diary.at(-1).ids, ['t', 'p', 's']);
+});
+
+test('Wore this counts toward her total, and Undo takes it back', () => {
+  const { data, outfit } = setup();
+  data.stats.worn = 9;
+  const undo = woreThis(data, outfit, when);
+  assert.equal(data.stats.worn, 10);
+  like(data, outfit, when);
+  assert.equal(data.stats.worn, 10, 'a 👍 is not a wear');
+  undo();
+  assert.equal(data.stats.worn, 9);
 });

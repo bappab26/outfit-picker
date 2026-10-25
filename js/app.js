@@ -2,6 +2,7 @@
 import { accountName, getToken, initAuth, isConfigured, isLibraryLoaded, signIn } from './auth.js';
 import { detectImageColor } from './colors.js';
 import { todayISO } from './dates.js';
+import { EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isRare, nudgePiece, oneYearAgo, secretStats } from './eggs.js';
 import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
 import { learnHabits, styleSummary } from './habits.js';
@@ -14,6 +15,7 @@ import { append, clear, h } from './ui/dom.js';
 import { renderHome } from './ui/home.js';
 import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
+import { confetti, toast } from './ui/party.js';
 import { renderWardrobe } from './ui/wardrobe.js';
 
 const MODE_KEY = 'outfit-picker:mode';
@@ -22,14 +24,23 @@ const MODE_KEY = 'outfit-picker:mode';
 const ACCOUNT_KEY = 'outfit-picker:account';
 // Her name for the app, so the sign-in screen shows it before her data has loaded.
 const NAME_KEY = 'outfit-picker:name';
+// Easter eggs (eggs.js): devil mode ('on'), the pieces she told "Keep it" (a JSON list), the
+// year her birthday card last showed and the day she hid "One year ago today".
+const DEVIL_KEY = 'outfit-picker:devil';
+const KEPT_KEY = 'outfit-picker:kept';
+const BIRTHDAY_KEY = 'outfit-picker:birthday';
+const MEMORY_KEY = 'outfit-picker:memory-hidden';
 const root = document.getElementById('app');
 
 // No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
 document.addEventListener('gesturestart', (event) => event.preventDefault());
 
-// Esc closes the big outfit (on a computer).
+// Esc closes the big outfit, the secret card or the birthday card (on a computer).
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && state.zoomed !== null && state.screen === 'home') homeActions.closeZoom();
+  if (event.key !== 'Escape' || state.screen !== 'home') return;
+  if (state.secretOpen) homeActions.closeSecret();
+  else if (state.birthdayOpen) homeActions.closeBirthday();
+  else if (state.zoomed !== null) homeActions.closeZoom();
 });
 
 // localStorage can be missing or throw (private browsing); the app still works without it.
@@ -71,6 +82,12 @@ const state = {
   confirmDelete: false,
   busy: null,
   note: null,
+  // Easter eggs: devil mode, the quick taps on the version line so far, and whether the
+  // secret card or the birthday card is open.
+  devil: storage.getItem(DEVIL_KEY) === 'on',
+  taps: null,
+  secretOpen: false,
+  birthdayOpen: false,
 };
 
 function displayName() {
@@ -97,9 +114,27 @@ function choiceDay() {
 }
 
 // A card on the home screen. `undoLike` and `undoWore` take back a 👍 or Wore this;
-// `undoDislike` brings back the outfit this card replaced.
+// `undoDislike` brings back the outfit this card replaced. `rare` makes it a rare find, and
+// `nudge` is a piece to ask her about after a 👎.
 function newCard(outfit) {
-  return { outfit, forgotten: Boolean(outfit.forgotten), liked: false, worn: false, undoLike: null, undoWore: null, undoDislike: null };
+  return {
+    outfit, forgotten: Boolean(outfit.forgotten), rare: isRare(), nudge: null,
+    liked: false, worn: false, undoLike: null, undoWore: null, undoDislike: null,
+  };
+}
+
+function keptPieces() {
+  try {
+    const kept = JSON.parse(storage.getItem(KEPT_KEY) ?? '[]');
+    return new Set(Array.isArray(kept) ? kept : []);
+  } catch {
+    return new Set();
+  }
+}
+
+// She won't be asked about this piece again.
+function keepPiece(id) {
+  storage.setItem(KEPT_KEY, JSON.stringify([...keptPieces(), id]));
 }
 
 function recompute(extra) {
@@ -145,6 +180,11 @@ const homeActions = {
     c.undoWore = c.undoWore ? null : woreThis(state.data, c.outfit, choiceDay());
     c.worn = Boolean(c.undoWore);
     c.undoDislike = null;
+    const milestone = c.worn && celebrateMilestone(state.data.stats);
+    if (milestone) {
+      toast(`${milestone} outfits worn! 😈`, 3500);
+      confetti();
+    }
     changed();
     render();
   },
@@ -159,9 +199,10 @@ const homeActions = {
       forgottenCards: before.forgotten ? 1 : 0,
     })).outfits;
     const undoDislike = { before, undo };
+    const nudge = nudgePiece(state.data, before.outfit, keptPieces());
     // Never put the outfit she just turned down straight back on screen.
-    if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike };
-    else state.cards[i] = { outfit: null, undoDislike };
+    if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike, nudge };
+    else state.cards[i] = { outfit: null, undoDislike, nudge };
     state.zoomed = null; // the outfit she was looking at is gone
     changed();
     render();
@@ -218,7 +259,70 @@ const homeActions = {
     state.data = null; // the sign-in screen shows her own name, not the sample's
     show('signin');
   },
+  // Easter eggs
+  tapVersion() {
+    state.taps = countTap(state.taps, Date.now());
+    const left = EGGS.devilTaps - state.taps.count;
+    if (left > 0) {
+      if (state.taps.count >= EGGS.countdownFrom) toast(`${left}…`, 1200);
+      return;
+    }
+    state.taps = null;
+    if (eggTheme(displayName(), false) === 'angel') {
+      toast("Angels can't go evil 😇");
+      return;
+    }
+    state.devil = !state.devil;
+    if (state.devil) storage.setItem(DEVIL_KEY, 'on');
+    else storage.removeItem(DEVIL_KEY);
+    toast(state.devil ? 'Devil mode on 😈' : 'Devil mode off');
+    render();
+  },
+  openSecret() {
+    state.secretOpen = true;
+    render();
+  },
+  closeSecret() {
+    state.secretOpen = false;
+    render();
+  },
+  closeBirthday() {
+    state.birthdayOpen = false;
+    render();
+  },
+  hideMemory() {
+    storage.setItem(MEMORY_KEY, todayISO());
+    render();
+  },
+  keepPiece(i) {
+    keepPiece(state.cards[i].nudge);
+    state.cards[i].nudge = null;
+    render();
+  },
+  lookAtPiece(i) {
+    const id = state.cards[i].nudge;
+    keepPiece(id);
+    state.cards[i].nudge = null;
+    wardrobeActions.edit(id);
+  },
 };
+
+// The first time she opens the app on her birthday each year: confetti and a card.
+function birthdaySurprise() {
+  const today = todayISO();
+  const year = today.slice(0, 4);
+  if (!isBirthday(today) || storage.getItem(BIRTHDAY_KEY) === year) return;
+  storage.setItem(BIRTHDAY_KEY, year);
+  state.birthdayOpen = true;
+  render();
+  confetti(140);
+}
+
+// "One year ago today": the pieces, unless she hid it today.
+function memoryIds() {
+  const today = todayISO();
+  return storage.getItem(MEMORY_KEY) === today ? null : oneYearAgo(state.data, today);
+}
 
 function goHome() {
   recompute();
@@ -378,6 +482,7 @@ async function openWardrobeData(source) {
   });
   recompute();
   show('home');
+  birthdaySurprise();
 }
 
 async function enterSample() {
@@ -475,10 +580,15 @@ function renderHomeScreen() {
     notes: state.notes,
     newCount: unlabeledIds(state.data).length,
     photoUrl: (id) => state.source.photoUrl(id),
+    fileName: (id) => state.data.items[id]?.fileName ?? '',
     sampleMode: state.source.mode === 'sample',
     saveError: state.saveError,
     hasLabeled: labeledItems(state.data).length > 0,
     canAdd: state.source.canAdd,
+    lateNight: isLateNight(new Date()),
+    memory: memoryIds(),
+    secret: state.secretOpen ? secretStats(state.data) : null,
+    birthday: state.birthdayOpen,
   }, homeActions);
 }
 
@@ -526,8 +636,18 @@ const SCREENS = {
   wardrobe: renderWardrobeScreen,
 };
 
+// Devil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
+function applyTheme() {
+  const theme = eggTheme(displayName(), state.devil);
+  document.body.classList.toggle('devil', theme === 'devil');
+  document.body.classList.toggle('angel', theme === 'angel');
+  const bg = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+}
+
 function render() {
   document.title = displayName();
+  applyTheme();
   // A tap inside the big outfit redraws it: keep it scrolled where it was.
   const zoomScroll = root.querySelector('.zoom-panel')?.scrollTop ?? 0;
   clear(root);
@@ -542,7 +662,7 @@ function render() {
 // label) doesn't, and neither do taps that only redraw the screen (render).
 function show(screen) {
   const isNew = screen !== state.screen;
-  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null });
+  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null, secretOpen: false, birthdayOpen: false });
   state.screen = screen;
   render();
   window.scrollTo(0, 0);

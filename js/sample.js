@@ -1,6 +1,6 @@
 // A built-in wardrobe for trying the app without signing in (spec §2, "Sample mode").
 import { SWATCHES } from './colors.js';
-import { emptyData } from './store.js';
+import { emptyData, statsFromDiary } from './store.js';
 
 const sampleId = (n) => `sample-${String(n).padStart(2, '0')}`;
 
@@ -95,6 +95,7 @@ export function sampleData(today) {
   });
   data.diary = SAMPLE_DIARY.map(([daysAgo, kind, occasion, pieces]) => (
     { date: daysBefore(today, daysAgo), kind, occasion, ids: pieces.map(sampleId) }));
+  data.stats = statsFromDiary(data.diary);
   return data;
 }
 

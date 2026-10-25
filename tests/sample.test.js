@@ -52,6 +52,12 @@ test('the sample diary uses sample pieces and shows a style', () => {
   assert.equal(summary.dressedUp.everyday, 'casual');
 });
 
+test('the sample counts the Wore this in its diary', () => {
+  const data = sampleData(today);
+  const worn = data.diary.filter((line) => line.kind === 'wore').length;
+  assert.deepEqual(data.stats, { worn, celebrated: worn >= 10 ? 10 : 0 });
+});
+
 test('drawItem returns an SVG in the piece color', () => {
   const url = drawItem('tops', 'navy');
   assert.ok(url.startsWith('data:image/svg+xml,'));

@@ -125,6 +125,44 @@ and a French interface (the interface is English).
   A banner shows "Sample mode" with an **Exit** button.
 - Purpose: test the matching rules quickly before using real photos.
 
+### Easter eggs (added later)
+
+Little hidden surprises, none of which gets in the way of picking outfits. The rules are in
+`js/eggs.js`.
+
+- **Devil mode:** tapping the version line at the bottom of the home screen 7 times, each tap
+  within 1.5 seconds of the last, turns it on or off. From the 4th tap a countdown shows
+  ("3…", "2…", "1…"), then "Devil mode on 😈" or "Devil mode off". The accents turn red, a red
+  glow sits at the top of every screen and two little red horns sit on the app's name. The
+  phone remembers it.
+- **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
+  (light lilac background, dark text) with a gold halo over the name, and the phone's top bar
+  light. It wins over devil mode: the 7 taps then only say "Angels can't go evil 😇".
+- **Secret card:** holding the version line for 0.8 seconds opens a card with a note from
+  bap bap (stored scrambled in the code, so it can't be read at a glance or found by a search)
+  and her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
+  color (the color she has worn most) and the day her wardrobe started (the earliest piece).
+  Lines with nothing to show yet are left out. × or a tap on the dark area closes it.
+- **Rare find:** each outfit card has a 1 in 150 chance of a gold edge, a shimmer and a
+  "✨ Rare find" tag. It only changes the look.
+- **"Why do you even own this?":** after a 👎, if a piece of that outfit has now been in 5
+  turned-down outfits and was never liked or worn, the new card asks "You keep saying no to
+  this one 👀 Why do you even own this?" with its photo. **Look at it** opens the piece's edit
+  screen (where Delete is); **Keep it** hides the question. Either way that piece is never
+  asked about again (remembered on the phone).
+- **Birthday (April 20):** the first time she opens the app that day each year, confetti falls
+  and a card says "Happy birthday! 🎂 Today every outfit is a 10." with a **Thank you!** button.
+- **Late night:** from 2:00 to 4:59 a.m., a line under the name says "Go to sleep. Nobody's
+  judging your outfit at this hour 😴".
+- **One year ago today:** when she wore an outfit on this day a year ago, a strip above the
+  occasions shows "One year ago today you wore this" with the pieces she still has (the last
+  outfit of that day). × hides it until tomorrow.
+- **Milestones:** her 10th, 50th and 100th Wore this, then every 100th, bring confetti and
+  "50 outfits worn! 😈". Each is celebrated once, even after Undo and Wore this again. Data
+  saved before this counts her Wore this from the diary, and milestones already passed count
+  as celebrated.
+- Confetti is skipped when the phone asks for less motion; the messages still show.
+
 ## 3. Matching rules
 
 All numbers below are defaults stored in one settings file (`js/settings.js`) so they can
@@ -241,7 +279,8 @@ dress with shoes (1 pair) isn't behind.
 ### 3.6 Her habits (added after the first version)
 
 Every 👍, 👎 and Wore this also adds a line to a **diary**: the date, which tap, the occasion
-and the pieces. The diary keeps her latest 500 choices. The app counts it to learn four habits,
+and the pieces. The diary keeps her latest 500 👍 and 👎 and her latest 800 Wore this (about
+two years, for "One year ago today"). The app counts it to learn four habits,
 using the pieces' labels as they are now:
 
 - **Color combinations:** every pair of colors in the outfit (two black pieces make black + black).
@@ -341,6 +380,7 @@ Microsoft names this folder after the app registration).
   "pairScores": { "<id A>|<id B>": 1.5 },
   "outfitPenalties": { "<id A>|<id B>|<id C>": -5 },
   "diary": [{ "date": "2026-10-25", "kind": "wore", "occasion": "work", "ids": ["<id A>", "<id B>", "<id C>"] }],
+  "stats": { "worn": 12, "celebrated": 10 },
   "settings": { "occasion": "everyday", "temperature": "mild", "name": null }
 }
 ```
@@ -351,7 +391,10 @@ Microsoft names this folder after the app registration).
 - `warmth` and `style` are `null` until she labels the piece.
 - IDs inside the keys of `pairScores` and `outfitPenalties` are sorted, so the same pair or
   outfit always gets the same key.
-- `diary` lists her taps oldest first (`kind` is `wore`, `like` or `dislike`), at most 500 (§3.6).
+- `diary` lists her taps oldest first (`kind` is `wore`, `like` or `dislike`): at most 500
+  👍 and 👎 and 800 Wore this (§3.6).
+- `stats.worn` counts her Wore this taps (Undo takes one back); `stats.celebrated` is the
+  last milestone celebrated (Easter eggs, §2).
 - The file is saved about 1 second after each change. Last save wins (one person, so
   conflicts are not expected).
 - If the file is missing or unreadable, the app starts with empty data; photos are found
@@ -377,10 +420,13 @@ js/colors.js             Color list, color wheel, naming a pixel, detecting a ph
 js/rules.js              Build, filter, score and pick outfits
 js/feedback.js           Apply 👍, 👎 and Wore this to the data
 js/habits.js             Learn her habits from the diary (section 3.6)
+js/eggs.js               Easter egg rules (section 2, Easter eggs)
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
+js/ui/eggs.js            The hidden bits of the home screen
+js/ui/party.js           Short messages and confetti
 tests/*.test.js          Automated checks
 package.json             Only so `node --test` can run; no dependencies
 README.md                Setup guide

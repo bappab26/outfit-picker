@@ -19,8 +19,10 @@ export const SETTINGS = {
   randomMax: 1.5,
   // Learning her habits from the diary of "Wore this", 👍 and 👎 (spec §3.6).
   habits: {
-    // The diary keeps this many of her latest choices.
+    // The diary keeps this many of her latest 👍 and 👎, and woreMax of her latest Wore this
+    // (about two years, so "One year ago today" has something to show).
     diaryMax: 500,
+    woreMax: 800,
     // A choice this many days old counts half as much as one made today.
     halfLifeDays: 60,
     // How slowly a habit is learned: a habit's score is (yes − no) / (yes + no + prior).
