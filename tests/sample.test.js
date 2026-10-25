@@ -13,7 +13,7 @@ const fakeStorage = () => {
 };
 
 test('sample pieces cover every type, style and warmth', () => {
-  assert.ok(SAMPLE_ITEMS.length >= 22 && SAMPLE_ITEMS.length <= 30, `${SAMPLE_ITEMS.length} pieces`);
+  assert.ok(SAMPLE_ITEMS.length >= 22 && SAMPLE_ITEMS.length <= 36, `${SAMPLE_ITEMS.length} pieces`);
   assert.equal(new Set(SAMPLE_ITEMS.map((i) => i.id)).size, SAMPLE_ITEMS.length);
   for (const c of CATEGORIES) assert.ok(SAMPLE_ITEMS.some((i) => i.category === c), c);
   for (const s of STYLES) assert.ok(SAMPLE_ITEMS.some((i) => i.style === s), s);

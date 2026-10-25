@@ -1,7 +1,15 @@
-# Outfit Picker
+# Anh's Wardrobe
 
 A free phone web app that reads photos of clothes from OneDrive and suggests outfits
 with simple rules. No AI, no paid services.
+
+Each piece gets a warmth (Light, Medium, Warm) and a style (Cozy, Casual, Smart, Dressy).
+Occasions use these styles: Everyday (Casual, Smart), Work (Smart), Evening out (Smart,
+Dressy), Special event (Dressy) and At home (Cozy, Casual). Cozy shoes and outerwear are
+only suggested at home, and at home a coat is never required.
+
+(The Microsoft app registration below is still called "Outfit Picker", which is why the
+data folder in OneDrive is `Apps/Outfit Picker`. Renaming the registration isn't needed.)
 
 Design: [docs/superpowers/specs/2026-10-25-outfit-picker-design.md](docs/superpowers/specs/2026-10-25-outfit-picker-design.md)
 

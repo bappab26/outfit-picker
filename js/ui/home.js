@@ -1,7 +1,7 @@
 // Home screen: occasion and temperature choices, then 3 outfit cards (spec §2).
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
 import { append, choices, h, photo } from './dom.js';
-import { OCCASION_LABELS, TEMPERATURE_LABELS } from './labels.js';
+import { APP_NAME, OCCASION_LABELS, TEMPERATURE_LABELS } from './labels.js';
 
 const NOTE_TEXT = {
   'add-shoes': 'Add some shoes',
@@ -39,7 +39,7 @@ export function renderHome(root, view, actions) {
       h('span', {}, 'Sample mode'),
       h('button', { class: 'link', onclick: actions.exitSample }, 'Exit')),
     h('header', { class: 'topbar' },
-      h('h1', {}, 'Outfit Picker'),
+      h('h1', {}, APP_NAME),
       h('button', { class: 'link', onclick: actions.openWardrobe }, 'Wardrobe')),
     view.saveError && h('div', { class: 'banner warn', role: 'status' }, 'Not saved, retrying'),
     n > 0 && h('button', { class: 'banner new', onclick: actions.openLabel },

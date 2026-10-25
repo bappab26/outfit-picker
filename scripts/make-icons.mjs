@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BACKGROUND = [0x7a, 0x4e, 0x6e]; // --accent in css/app.css
+const BACKGROUND = [0x32, 0x17, 0x4d]; // Russian violet, --bg in css/app.css
 const SHIRT = [0xff, 0xff, 0xff];
 const SAMPLES = 4; // per pixel side, for smooth edges
 

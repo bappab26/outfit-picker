@@ -11,6 +11,7 @@ import { allItems, createSaver, labeledItems, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
 import { renderHome } from './ui/home.js';
 import { renderLabel } from './ui/label.js';
+import { APP_NAME } from './ui/labels.js';
 import { renderWardrobe } from './ui/wardrobe.js';
 
 const MODE_KEY = 'outfit-picker:mode';
@@ -256,7 +257,7 @@ async function onSignIn() {
 function renderSignIn() {
   const remembered = storage.getItem(ACCOUNT_KEY);
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, 'Outfit Picker'),
+    h('h1', {}, APP_NAME),
     h('p', { class: 'lead' }, 'Outfit ideas from the clothes in your OneDrive.'),
     state.signinNote && h('p', { class: 'hint', role: 'status' }, state.signinNote),
     h('button', { class: 'primary', disabled: !isConfigured(), onclick: onSignIn },
@@ -267,13 +268,13 @@ function renderSignIn() {
 
 function renderLoading() {
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, 'Outfit Picker'),
+    h('h1', {}, APP_NAME),
     h('p', { class: 'lead', role: 'status' }, 'Loading your wardrobe…')));
 }
 
 function renderError() {
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, 'Outfit Picker'),
+    h('h1', {}, APP_NAME),
     h('p', { class: 'lead', role: 'alert' },
       state.error.offline ? "You're offline. Connect to load your wardrobe." : "Couldn't reach OneDrive."),
     h('button', { class: 'primary', onclick: () => state.error.retry() }, 'Retry')));

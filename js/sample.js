@@ -39,6 +39,10 @@ export const SAMPLE_ITEMS = [
   piece(27, 'outerwear', 'Evening coat', 'black', 'warm', 'dressy'),
   piece(28, 'outerwear', 'Denim jacket', 'denim', 'light', 'casual'),
   piece(29, 'outerwear', 'Puffer jacket', 'grey', 'warm', 'casual'),
+  piece(30, 'tops', 'Lounge tee', 'purple', 'light', 'cozy'),
+  piece(31, 'pants', 'Sweatpants', 'grey', 'warm', 'cozy'),
+  piece(32, 'shoes', 'Slippers', 'beige', 'medium', 'cozy'),
+  piece(33, 'outerwear', 'Cozy cardigan', 'brown', 'medium', 'cozy'),
 ];
 
 function daysBefore(iso, n) {

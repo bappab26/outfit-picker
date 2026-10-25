@@ -7,9 +7,10 @@ import { SETTINGS } from './settings.js';
 
 // Order of pieces on an outfit card.
 export const CATEGORIES = ['tops', 'dresses', 'pants', 'skirts', 'shoes', 'outerwear'];
-export const OCCASIONS = ['everyday', 'work', 'evening', 'special'];
+export const OCCASIONS = ['everyday', 'work', 'evening', 'special', 'home'];
 export const TEMPERATURES = ['cold', 'mild', 'hot'];
-export const STYLES = ['casual', 'smart', 'dressy'];
+// From most relaxed to most dressed up; "one step off" counts along this list.
+export const STYLES = ['cozy', 'casual', 'smart', 'dressy'];
 export const WARMTHS = ['light', 'medium', 'warm'];
 
 export const ALLOWED_STYLES = {
@@ -17,6 +18,7 @@ export const ALLOWED_STYLES = {
   work: ['smart'],
   evening: ['smart', 'dressy'],
   special: ['dressy'],
+  home: ['cozy', 'casual'],
 };
 
 // Which outerwear can be added at each temperature.
@@ -28,6 +30,8 @@ const MAIN_PIECES = ['tops', 'pants', 'skirts', 'dresses'];
 export function fitsStyle(item, occasion) {
   const allowed = ALLOWED_STYLES[occasion];
   if (MAIN_PIECES.includes(item.category)) return allowed.includes(item.style);
+  // Slippers and lounge layers stay home.
+  if (item.style === 'cozy') return allowed.includes('cozy');
   const step = STYLES.indexOf(item.style);
   return allowed.some((s) => Math.abs(STYLES.indexOf(s) - step) <= 1);
 }
@@ -78,10 +82,11 @@ export function buildOutfits(items, { occasion, temperature }) {
   }
 
   const notes = [];
+  // At home a coat is never needed; a cardigan is a choice.
+  const coatRequired = temperature === 'cold' && occasion !== 'home';
   let layers;
-  if (temperature === 'cold') layers = outerwear.length ? outerwear : [null];
-  else if (temperature === 'mild') layers = [null, ...outerwear];
-  else layers = [null];
+  if (coatRequired) layers = outerwear.length ? outerwear : [null];
+  else layers = [null, ...outerwear];
 
   const outfits = [];
   for (const base of bases) {
@@ -94,7 +99,7 @@ export function buildOutfits(items, { occasion, temperature }) {
   }
 
   if (outfits.length) {
-    if (temperature === 'cold' && !outerwear.length) notes.push('add-coat');
+    if (coatRequired && !outerwear.length) notes.push('add-coat');
   } else {
     const has = (category) => items.some((i) => i.category === category);
     if (!has('shoes')) notes.push('add-shoes');

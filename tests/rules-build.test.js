@@ -70,3 +70,25 @@ test('explains why nothing is possible', () => {
   assert.deepEqual(buildOutfits([m('s', 'shoes')], ctx()).notes, ['add-main']);
   assert.deepEqual(buildOutfits([m('d', 'dresses'), m('s', 'shoes')], ctx('work')).notes, ['no-match']);
 });
+
+test('at home uses cozy and casual pieces', () => {
+  const items = [m('tc', 'tops', { style: 'cozy' }), m('ts', 'tops', { style: 'smart' }),
+    m('p', 'pants', { style: 'casual' }), m('s', 'shoes', { style: 'cozy' })];
+  assert.deepEqual(keys(buildOutfits(items, ctx('home'))), ['p|s|tc']);
+});
+
+test('cozy shoes and outerwear stay home', () => {
+  const items = [m('t', 'tops'), m('p', 'pants'), m('slippers', 'shoes', { style: 'cozy' }), m('s', 'shoes'),
+    m('robe', 'outerwear', { style: 'cozy', warmth: 'medium' })];
+  assert.deepEqual(keys(buildOutfits(items, ctx('everyday'))), ['p|s|t']);
+  assert.deepEqual(keys(buildOutfits(items, ctx('home'))), ['p|robe|slippers|t', 'p|robe|s|t', 'p|slippers|t', 'p|s|t']);
+});
+
+test('at home a coat is optional even when it is cold', () => {
+  const items = [m('t', 'tops', { style: 'cozy' }), m('p', 'pants', { style: 'cozy' }), m('s', 'shoes', { style: 'cozy' })];
+  const without = buildOutfits(items, ctx('home', 'cold'));
+  assert.deepEqual(keys(without), ['p|s|t']);
+  assert.deepEqual(without.notes, []);
+  const withCardigan = buildOutfits([...items, m('c', 'outerwear', { style: 'cozy', warmth: 'warm' })], ctx('home', 'cold'));
+  assert.deepEqual(keys(withCardigan), ['c|p|s|t', 'p|s|t']);
+});

@@ -121,3 +121,13 @@ test('flush writes right away', async () => {
   await saver.flush();
   assert.deepEqual(writes, ['{"n":1}']);
 });
+
+test('parseData keeps the Cozy style and the At home occasion', () => {
+  const data = parseData(JSON.stringify({
+    version: 1,
+    items: { a: { category: 'tops', fileName: 'a.jpg', color: 'grey', warmth: 'warm', style: 'cozy', addedAt: '2026-10-01', lastWorn: null, wearCount: 0 } },
+    settings: { occasion: 'home', temperature: 'cold', somethingDifferent: false },
+  }));
+  assert.equal(data.items.a.style, 'cozy');
+  assert.equal(data.settings.occasion, 'home');
+});

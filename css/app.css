@@ -1,16 +1,18 @@
 :root {
-  color-scheme: light;
-  --bg: #faf7f2;
-  --surface: #ffffff;
-  --text: #2a2420;
-  --muted: #6f655d;
-  --line: #e6dfd6;
-  --tile: #f3efe9;
-  --accent: #7a4e6e;
-  --accent-text: #ffffff;
-  --accent-soft: #f2e7ef;
-  --warn-bg: #fff3d6;
-  --warn-text: #6b4e00;
+  color-scheme: dark;
+  --bg: #32174d; /* Russian violet */
+  --surface: #432762;
+  --text: #f7f0fb;
+  --muted: #cdbbdc;
+  --line: #5e4180;
+  /* Photo tiles stay light so clothes are easy to see. */
+  --tile: #f4eff8;
+  --tile-text: #5a4a68;
+  --accent: #dcbcf7;
+  --accent-text: #2a1240;
+  --accent-soft: #5b3c7d;
+  --warn-bg: #ffe9a8;
+  --warn-text: #4a3500;
   --radius: 14px;
 }
 
@@ -143,7 +145,7 @@ button.link {
   justify-content: center;
   padding: 6px;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--tile-text);
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -163,7 +165,7 @@ button.link {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   vertical-align: -3px;
 }
 
