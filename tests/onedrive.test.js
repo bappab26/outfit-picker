@@ -24,11 +24,11 @@ const graphWith = (routes, extra = {}) => {
 };
 const isPost = (r) => r.method === 'POST';
 
-test('ensureFolders creates Wardrobe and all six subfolders when Wardrobe is missing', async () => {
+test('ensureFolders creates Wardrobe and all its subfolders when Wardrobe is missing', async () => {
   const { graph, requests } = graphWith([[isPost, () => json({}, 201)]]);
   await graph.ensureFolders();
   const posts = requests.filter(isPost);
-  assert.deepEqual(posts.map((p) => JSON.parse(p.body).name), ['Wardrobe', 'Tops', 'Pants', 'Skirts', 'Dresses', 'Shoes', 'Outerwear']);
+  assert.deepEqual(posts.map((p) => JSON.parse(p.body).name), ['Wardrobe', 'Tops', 'Hoodies', 'Sweatshirts', 'Pants', 'Jeans', 'Shorts', 'Skirts', 'Dresses', 'Shoes', 'Jackets', 'Coats']);
   assert.equal(posts[0].url, `${G}/me/drive/root/children`);
   assert.ok(posts.slice(1).every((p) => p.url === `${G}/me/drive/root:/Wardrobe:/children`));
   assert.equal(JSON.parse(posts[0].body)['@microsoft.graph.conflictBehavior'], 'fail');
@@ -41,7 +41,7 @@ test('ensureFolders only creates missing subfolders', async () => {
     [isPost, () => json({}, 201)],
   ]);
   await graph.ensureFolders();
-  assert.deepEqual(requests.filter(isPost).map((p) => JSON.parse(p.body).name), ['Pants', 'Skirts', 'Dresses', 'Outerwear']);
+  assert.deepEqual(requests.filter(isPost).map((p) => JSON.parse(p.body).name), ['Hoodies', 'Sweatshirts', 'Pants', 'Jeans', 'Shorts', 'Skirts', 'Dresses', 'Jackets', 'Coats']);
 });
 
 test('ensureFolders treats 409 as already created', async () => {
@@ -69,12 +69,12 @@ test('listWardrobe follows paging and keeps only images', async () => {
 
 test('listWardrobe maps each folder to its piece type', async () => {
   const { graph } = graphWith([
-    [(r) => r.url.includes('/Wardrobe/Outerwear:/children'), () => json({ value: [image('coat')] })],
+    [(r) => r.url.includes('/Wardrobe/Coats:/children'), () => json({ value: [image('coat')] })],
     [(r) => r.url.includes('/Wardrobe/Skirts:/children'), () => json({ value: [image('skirt')] })],
     [(r) => r.url.includes('/Wardrobe/'), () => json({ value: [] })],
   ]);
   const list = await graph.listWardrobe();
-  assert.deepEqual(list.map((e) => [e.id, e.category]).sort(), [['coat', 'outerwear'], ['skirt', 'skirts']]);
+  assert.deepEqual(list.map((e) => [e.id, e.category]).sort(), [['coat', 'coats'], ['skirt', 'skirts']]);
 });
 
 test('readData returns null when there is no data file', async () => {

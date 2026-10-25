@@ -1,12 +1,22 @@
-# Anh's Wardrobe
+# lil evil wardrobe
 
 A free phone web app that reads photos of clothes from OneDrive and suggests outfits
-with simple rules. No AI, no paid services.
+with simple rules. No AI, no paid services. "lil evil wardrobe" is the starting name: she can
+tap the name at the top of the app to call it whatever she likes.
+
+Her clothes go in 11 OneDrive folders. An outfit is a top (from **Tops**, **Hoodies** or
+**Sweatshirts**, or a hoodie or sweatshirt over a top), a bottom (**Pants**, **Jeans**,
+**Shorts** or **Skirts**) or a **Dress**, **Shoes**, and sometimes a **Jacket** or **Coat** over
+everything. A hoodie over a top is never suggested when it's hot, and shorts never when it's cold.
 
 Each piece gets a warmth (Light, Medium, Warm) and a style (Cozy, Casual, Smart, Dressy).
 Occasions use these styles: Everyday (Casual, Smart), Work (Smart), Evening out (Smart,
-Dressy), Special event (Dressy) and At home (Cozy, Casual). Cozy shoes and outerwear are
+Dressy), Special event (Dressy) and At home (Cozy, Casual). Cozy shoes and jackets are
 only suggested at home, and at home a coat is never required.
+
+Of the three outfits, the last one always has a piece she hasn't worn in 30 days or more
+(when there is one), marked **Not worn in a while**. 👍 and **Wore this** can be tapped again
+to take them back; after a 👎, **Undo 👎** brings the outfit back.
 
 The app also learns her style from what she taps (see "How it learns her style" below).
 
@@ -128,16 +138,19 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
 
 - **Automated checks:** `npm test` runs every check of the outfit rules, data handling and
   OneDrive calls. All should pass.
-- **Sample mode:** open the app and tap **Try with sample clothes**. It loads about 30 drawn
+- **Sample mode:** open the app and tap **Try with sample clothes**. It loads about 40 drawn
   pieces, no sign-in needed, so you can try the rules. It comes with a made-up month of
   choices (pink with black, casual pants outfits, dresses for evenings out), so
   **Wardrobe → Your style so far** shows something and the picks lean that way. Tap **Exit**
   to leave.
 - **Your own account:** tap **Sign in with Microsoft** and sign in with your own Microsoft
-  account. The app creates `Wardrobe` and its six folders in *your* OneDrive. Add a few
+  account. The app creates `Wardrobe` and its 11 folders in *your* OneDrive. Add a few
   photos, tap **Refresh** on the Wardrobe screen, label them and check the outfits.
   Test on your computer (`http://localhost:8080/`) and on your phone (the GitHub Pages
   address).
+- **Tested with an earlier version?** Jackets and coats used to go in one `Outerwear`
+  folder. Move those photos into `Jackets` or `Coats` and label them again; the app no
+  longer reads `Outerwear`.
 - **Close and reopen:** on the phone, fully close the home-screen app (swipe it away), open
   it again and check you are still signed in, or get **Continue as …** and are back after
   one tap.
@@ -149,6 +162,8 @@ Push your changes to GitHub; Pages updates the site within a minute or two.
 Phones keep a copy of the app so it opens fast, and pick up a new version the next time
 it's opened. To make phones drop the old copy right away, raise the number in `CACHE_NAME`
 at the top of `sw.js` (`outfit-picker-v1` → `outfit-picker-v2`, and so on) with each update.
+Also set `VERSION` in `js/ui/labels.js` to the day's date: it shows at the bottom of the app
+("Version … · by bap bap"), so you can see which version a phone has.
 If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm test` reminds you).
 
 ## Give it to your friend
@@ -160,10 +175,13 @@ If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm te
    school account, OneDrive may not send photo previews and the cards would show file names.)
 3. She adds it to her home screen: **Share → Add to Home Screen** on iPhone (Safari), or
    **⋮ → Add to Home screen** on Android (Chrome). If you set `HOME_SCREEN_SIGNIN` to
-   `'safari-only'`, she should keep it as a Safari bookmark instead.
+   `'safari-only'`, she should keep it as a Safari bookmark instead. The name under the icon
+   is chosen here (an iPhone lets her type it); renaming the app inside it later doesn't
+   change the icon's name.
 4. Tell her how to add clothes:
-   - Photos go in OneDrive under `Wardrobe`, in the right folder: `Tops`, `Pants` (jeans,
-     trousers, shorts), `Skirts`, `Dresses` (dresses and jumpsuits), `Shoes`, `Outerwear`.
+   - Photos go in OneDrive under `Wardrobe`, in the right folder: `Tops` (T-shirts,
+     blouses, shirts), `Hoodies`, `Sweatshirts`, `Pants` (trousers), `Jeans`, `Shorts`,
+     `Skirts`, `Dresses` (dresses and jumpsuits), `Shoes`, `Jackets`, `Coats`.
    - One piece per photo, on a plain background.
    - Then open the app and label the new pieces (two taps each).
 
@@ -174,13 +192,14 @@ choices). From it the app learns four habits by plain counting, no AI:
 
 - **Color combinations** she wears together, like black with pink.
 - **Favorite colors.**
-- **Shape per occasion:** dress, skirt or pants, for example mostly dresses for evenings out.
+- **Shape per occasion:** dress, skirt, pants (jeans count as pants) or shorts, for example
+  mostly dresses for evenings out.
 - **How dressed-up:** Casual or Smart for Everyday, Smart or Dressy for Evening out, and so on.
 
 Wore this and 👍 count as a yes, 👎 as a no. Recent choices count more: a choice from two
 months ago counts half. The habits only nudge the picks, about as much as the color rules:
-pieces worn in the last 3 days still step aside, and **Something different** still brings
-back forgotten ones. A new piece benefits right away, because habits are about colors and
+pieces worn in the last 3 days still step aside, and the **Not worn in a while** outfit still
+brings back forgotten ones. Taking back a tap (Undo) also takes it out of the diary. A new piece benefits right away, because habits are about colors and
 shapes, not single pieces.
 
 After about 5 choices, **Wardrobe** shows **Your style so far**, for example
@@ -191,8 +210,8 @@ to check that it's learning.
 
 Every number the rules use is in `js/settings.js`, with a note on what it does. For
 example, `recentDays: 3` is how long a piece counts as "just worn", and
-`forgottenDays: 30` is how long until a piece counts as forgotten for
-**Something different**. The `habits` numbers set how fast and how strongly it learns
+`forgottenDays: 30` is how long until a piece counts as forgotten for the
+**Not worn in a while** outfit. The `habits` numbers set how fast and how strongly it learns
 her style. Run `npm test` after a change: some checks use these values, so
 a failing check after a deliberate change means that check needs updating too.
 
@@ -213,8 +232,10 @@ On a French OneDrive the `Apps` folder may be called `Applications`.
 - **"Sign in with Microsoft" is greyed out:** the app ID in `js/config.js` hasn't been
   filled in.
 - **New photos don't show up:** tap **Refresh** on the Wardrobe screen. Photos must be in
-  one of the six folders, not directly in `Wardrobe`.
+  one of the 11 folders, not directly in `Wardrobe`.
 - **A photo shows its file name instead of the picture:** OneDrive hasn't made a preview
   for it yet; try **Refresh** later.
+- **The page still zooms on an iPhone:** iPhones don't always obey a page's no-zoom setting,
+  so the app also blocks the pinch gesture itself. Check it on her phone.
 - **"Not saved, retrying":** the phone lost its connection. Changes are kept on the phone
   and saved the next time the app opens online.

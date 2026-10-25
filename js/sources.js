@@ -3,8 +3,8 @@
 import { drawItem, sampleData } from './sample.js';
 import { isReadable, mergeListing, parseData } from './store.js';
 
-// Numbered so a sample saved before the diary existed is replaced by the new one.
-const SAMPLE_KEY = 'outfit-picker:sample-2';
+// Numbered so a sample saved by an older version (before the diary and the new folders) is replaced.
+const SAMPLE_KEY = 'outfit-picker:sample-3';
 // A copy of the data that hasn't reached OneDrive yet, kept until it does.
 const PENDING_KEY = 'outfit-picker:pending';
 // How many photos' colors to detect at the same time.

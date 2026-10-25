@@ -13,11 +13,16 @@ export const DATA_FILE = 'data.json';
 // OneDrive subfolder name → piece type. The order is the wardrobe screen order.
 export const FOLDERS = {
   Tops: 'tops',
+  Hoodies: 'hoodies',
+  Sweatshirts: 'sweatshirts',
   Pants: 'pants',
+  Jeans: 'jeans',
+  Shorts: 'shorts',
   Skirts: 'skirts',
   Dresses: 'dresses',
   Shoes: 'shoes',
-  Outerwear: 'outerwear',
+  Jackets: 'jackets',
+  Coats: 'coats',
 };
 
 // Set from the probe (docs/superpowers/probe-results.md).

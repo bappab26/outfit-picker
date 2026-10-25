@@ -49,6 +49,45 @@ test('each tap adds a line to the diary', () => {
   ]);
 });
 
+const copy = (data) => JSON.parse(JSON.stringify(data));
+
+test('undo takes back a 👍', () => {
+  const { data, outfit } = setup();
+  const before = copy(data);
+  const undo = like(data, outfit, when);
+  undo();
+  assert.deepEqual(data, before);
+});
+
+test('undo takes back a 👎', () => {
+  const { data, outfit } = setup();
+  data.pairScores['p|t'] = 2;
+  const before = copy(data);
+  const undo = dislike(data, outfit, when);
+  undo();
+  assert.deepEqual(data, before);
+});
+
+test('undo takes back a Wore this, with the earlier last-worn date', () => {
+  const { data, outfit } = setup();
+  data.items.t.lastWorn = '2026-10-01';
+  data.items.t.wearCount = 4;
+  const before = copy(data);
+  const undo = woreThis(data, outfit, when);
+  undo();
+  assert.deepEqual(data, before);
+});
+
+test('undoing one tap keeps the others', () => {
+  const { data, outfit } = setup();
+  const undoLike = like(data, outfit, when);
+  woreThis(data, outfit, when);
+  undoLike();
+  assert.equal(data.pairScores['p|t'], 0.5);
+  assert.deepEqual(data.diary.map((line) => line.kind), ['wore']);
+  assert.equal(data.items.t.wearCount, 1);
+});
+
 test('the diary keeps only the latest choices', () => {
   const { data, outfit } = setup();
   const max = SETTINGS.habits.diaryMax;

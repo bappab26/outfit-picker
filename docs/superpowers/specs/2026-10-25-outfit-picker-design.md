@@ -1,4 +1,4 @@
-# Outfit Picker — Design Spec
+# lil evil wardrobe (first called Outfit Picker) — Design Spec
 
 Date: 2026-10-25
 Status: Draft, waiting for review
@@ -34,16 +34,21 @@ and a French interface (the interface is English).
 ### First time (once)
 
 1. She opens the link on her phone and taps **Sign in with Microsoft**.
-2. The app creates a `Wardrobe` folder at the root of her OneDrive, with six subfolders:
+2. The app creates a `Wardrobe` folder at the root of her OneDrive, with 11 subfolders:
 
    | Folder | What goes in it |
    |---|---|
    | `Tops` | Shirts, t-shirts, blouses, sweaters |
-   | `Pants` | Jeans, trousers, shorts |
+   | `Hoodies` | Hoodies |
+   | `Sweatshirts` | Sweatshirts |
+   | `Pants` | Trousers |
+   | `Jeans` | Jeans |
+   | `Shorts` | Shorts |
    | `Skirts` | Skirts |
    | `Dresses` | Dresses and jumpsuits |
    | `Shoes` | All footwear |
-   | `Outerwear` | Coats, jackets, blazers, cardigans worn on top |
+   | `Jackets` | Jackets, blazers, cardigans worn on top |
+   | `Coats` | Coats |
 
    If the folders already exist, the app uses them as they are.
 3. She adds it to her home screen ("Add to Home Screen") so it opens like an app.
@@ -63,18 +68,29 @@ and a French interface (the interface is English).
 
 ### Home screen: outfits
 
+- The app's name at the top, "lil evil wardrobe" until she renames it: tapping the name
+  (with its ✎) opens a box to type a new one. It is saved with her data and also shows in
+  the browser tab. An empty name goes back to "lil evil wardrobe".
 - **Occasion** choice at the top: Everyday · Work · Evening out · Special event.
 - **Temperature** choice: Cold · Mild · Hot. (There is no weather lookup. This tap decides
   sweater-and-coat versus t-shirt.)
 - Both choices are remembered from last time.
-- **3 outfit cards.** Each card shows the photos of its pieces: top + pants or skirt + shoes,
-  or dress + shoes, plus outerwear when the rules add it.
+- **3 outfit cards.** Each card shows the photos of its pieces (see 3.2): a top, hoodie or
+  sweatshirt, or a hoodie or sweatshirt over a top; pants, jeans, shorts or a skirt; shoes;
+  or a dress and shoes; plus a jacket or coat when the rules add one.
+- The last card has a piece she hasn't worn in 30 or more days, when she has one, and is
+  marked **Not worn in a while** (see 3.5). There is no switch for this.
 - Each card has three buttons:
-  - **👍** marks the outfit as liked (button stays highlighted).
-  - **👎** lowers the outfit's score and replaces the card with the next-best outfit.
-  - **Wore this** records today's date on every piece. The button changes to "Worn today ✓".
+  - **👍** marks the outfit as liked (button stays highlighted). Tapping it again takes it back.
+  - **👎** lowers the outfit's score and replaces the card with the next-best outfit. The new
+    card shows **Undo 👎** until she taps one of its buttons; Undo takes the 👎 back and
+    brings the old outfit back.
+  - **Wore this** records today's date on every piece. The button changes to "Worn today ✓";
+    tapping it again takes it back and restores the earlier dates.
+  - Undo works while the cards are on screen; it is not kept after the app closes.
 - **Shuffle** replaces all 3 cards with 3 new ones.
-- **Something different** (on/off switch) favors pieces she hasn't worn in a while.
+- At the bottom: "Version <date> · by bap bap" (also on the sign-in screen).
+- Zooming is turned off (no pinch or double-tap zoom).
 
 ### Wardrobe screen
 
@@ -114,13 +130,19 @@ red → orange → yellow → green → blue → purple → pink → red.
 
 From labeled pieces only:
 
-- **Shapes:** top + pants + shoes, top + skirt + shoes, or dress + shoes.
-- **Outerwear:**
-  - **Cold:** one Medium or Warm outerwear piece is added. If she has none that fits,
-    outfits are shown without it, with a note "Add a coat to Outerwear".
-  - **Mild:** outerwear is optional. Outfits are built both without it and with each
-    Light or Medium outerwear piece.
-  - **Hot:** no outerwear.
+- **Upper body:** a top, a hoodie or sweatshirt on its own, or a hoodie or sweatshirt over a
+  top. Never two hoodies or sweatshirts, never one over a dress, and no layering when Hot.
+- **Shapes:** upper body + bottom (pants, jeans, shorts or skirt) + shoes, or dress + shoes.
+- **Jackets and coats** go over everything:
+  - **Cold:** one Medium or Warm jacket or coat is added. If she has none that fits,
+    outfits are shown without it, with a note "Add a coat or a jacket".
+  - **Mild:** optional. Outfits are built both without one and with each Light or Medium
+    jacket or coat.
+  - **Hot:** none.
+- **Speed:** a big wardrobe makes too many outfits to score on a phone. While picking, only
+  the 4 best-scoring tops go under each hoodie or sweatshirt, and only the 500 best outfits
+  get a jacket or coat. If that leaves too few outfits that share no piece, the list is built
+  again from the pieces not used yet (see 3.5).
 
 ### 3.3 Step 2: remove outfits that don't fit
 
@@ -133,24 +155,26 @@ From labeled pieces only:
 | Evening out | Smart, Dressy |
 | Special event | Dressy |
 
-- Tops, pants, skirts and dresses must have an allowed style.
-- Shoes and outerwear may be one step away from an allowed style (for example a Smart coat
+- Tops, hoodies, sweatshirts, bottoms and dresses must have an allowed style.
+- Shoes, jackets and coats may be one step away from an allowed style (for example a Smart coat
   over a Casual outfit is fine for Everyday; Casual shoes are fine for Work).
 
 **Temperature:**
 
 - **Hot:** no Warm pieces at all.
-- **Cold:** no Light pants (this removes shorts and thin trousers) and no Light shoes
+- **Cold:** no shorts, no Light pants or jeans (thin trousers) and no Light shoes
   (this removes sandals). Skirts and dresses of any warmth are allowed, assuming tights;
-  outerwear is added anyway. Light tops are allowed (worn under outerwear).
+  a jacket or coat is added anyway. Light tops are allowed (worn under a coat).
 - **Mild:** no restrictions.
 
 **Colors:** an outfit with more than 2 different bold colors is removed. Neutrals don't count.
 
 ### 3.4 Step 3: score each remaining outfit
 
-The score is the sum of the parts below. Each part looks at every **pair of pieces** in the
-outfit (an outfit of 4 pieces has 6 pairs).
+The score is the sum of the parts below. The color and taste parts look at every **pair of
+pieces** in the outfit (an outfit of 4 pieces has 6 pairs). Their sum is then counted as if
+the outfit had 3 pairs (sum × 3 ÷ pairs), so layers don't win just by adding pairs, and a
+dress with shoes (1 pair) isn't behind.
 
 **Color score, per pair:**
 
@@ -173,9 +197,8 @@ outfit (an outfit of 4 pieces has 6 pairs).
 **Freshness, per piece:**
 
 - Worn in the last 3 days: −3.
-- With **Something different** on: not worn in 30 or more days (or never worn): +4. Also,
-  every suggested outfit must contain at least one such piece. If that's impossible, normal
-  outfits are shown with the note "Everything has been worn recently".
+- Only when picking the **Not worn in a while** outfit (3.5): not worn in 30 or more days
+  (or never worn): +4, counted as if the outfit had 3 pieces (sum × 3 ÷ pieces).
 
 **Randomness:** a random value between 0 and 1.5 is added, so Shuffle gives new picks.
 
@@ -183,12 +206,17 @@ outfit (an outfit of 4 pieces has 6 pairs).
 
 ### 3.5 Step 4: pick 3
 
-- Sort outfits by score, highest first.
-- Take the best one, then keep going down the list, skipping any outfit that shares a piece
-  with one already picked, until there are 3.
+- First the **Not worn in a while** outfit: the best-scoring outfit (with the forgotten-piece
+  bonus) that contains a piece not worn in 30 or more days. If she has no such piece, all 3
+  are ordinary outfits.
+- Then the others: sort outfits by score, highest first. Take the best one, then keep going
+  down the list, skipping any outfit that shares a piece with one already picked, until
+  there are 3.
+- The forgotten-piece outfit is shown last. When 👎 replaces it, the new one is also a
+  forgotten-piece outfit when possible.
 - **Shuffle** re-rolls the randomness and skips the outfits currently shown.
 - If no outfit is possible, show what's missing, for example "Add some shoes" or
-  "Add at least one top and one pair of pants or skirt, or a dress".
+  "Add at least one top and one pair of pants, jeans, shorts or a skirt, or a dress".
 - If only 1 or 2 outfits are possible, show those.
 
 ### 3.6 Her habits (added after the first version)
@@ -247,7 +275,7 @@ picks (habits scoring 0.3 or more).
 
 On each app open (and when she taps **Refresh** on the Wardrobe screen):
 
-1. Make sure `Wardrobe` and its six subfolders exist; create any that are missing.
+1. Make sure `Wardrobe` and its 11 subfolders exist; create any that are missing.
 2. List the image files in each subfolder through Microsoft Graph, including their
    thumbnails, following paging links.
 3. Show photos using the **medium thumbnail**, not the full photo. This keeps it fast and
@@ -294,11 +322,13 @@ Microsoft names this folder after the app registration).
   "pairScores": { "<id A>|<id B>": 1.5 },
   "outfitPenalties": { "<id A>|<id B>|<id C>": -5 },
   "diary": [{ "date": "2026-10-25", "kind": "wore", "occasion": "work", "ids": ["<id A>", "<id B>", "<id C>"] }],
-  "settings": { "occasion": "everyday", "temperature": "mild", "somethingDifferent": false }
+  "settings": { "occasion": "everyday", "temperature": "mild", "name": null }
 }
 ```
 
-- `category` is one of `tops`, `pants`, `skirts`, `dresses`, `shoes`, `outerwear`.
+- `category` is one of `tops`, `hoodies`, `sweatshirts`, `pants`, `jeans`, `shorts`, `skirts`,
+  `dresses`, `shoes`, `jackets`, `coats`.
+- `settings.name` is her name for the app (at most 40 letters), or `null` for the default.
 - `warmth` and `style` are `null` until she labels the piece.
 - IDs inside the keys of `pairScores` and `outfitPenalties` are sorted, so the same pair or
   outfit always gets the same key.
@@ -359,10 +389,11 @@ number generator are passed in as parameters, so tests give the same result ever
    - Color wheel: next-to and opposite pairs; outfits with 3 bold colors are removed.
    - Style rules: for example Work never includes a Casual top; shoes one step off are allowed.
    - Temperature rules: Hot never includes Warm pieces; Cold removes Light pants and Light
-     shoes but keeps Light skirts and dresses; Cold adds outerwear.
+     shoes but keeps Light skirts and dresses; Cold adds a jacket or coat.
+   - Layers: hoodies and sweatshirts alone or over a top, never over a dress or when Hot.
    - Scoring: 👍 raises the pairs, 👎 lowers them and penalizes the exact outfit, Wore this
-     updates the dates and counts; recently worn pieces lose points; Something different
-     forces a forgotten piece.
+     updates the dates and counts, and each can be undone; recently worn pieces lose points;
+     one outfit has a forgotten piece.
    - Picking: never the same piece on two cards; Shuffle avoids the outfits shown.
    - Merging: new, moved and deleted photos are handled as described in 4.3.
 2. **Sample mode** to try the whole app in a browser without signing in.

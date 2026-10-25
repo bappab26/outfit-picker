@@ -136,3 +136,11 @@ test('the style summary leaves out weak habits', () => {
   // Pants 3 to dress 2: (3 − 2) / (5 + 4) is too weak to say "mostly pants".
   assert.deepEqual(summary.shapes, {});
 });
+
+test('jeans count as pants; shorts are a shape of their own', () => {
+  const items = [m('t', 'tops'), m('j', 'jeans'), m('sh', 'shorts'), m('s', 'shoes')];
+  const habits = learnHabits(dataWith(items, [choice('wore', ['t', 'j', 's']), choice('wore', ['t', 'j', 's'])]), today);
+  close(habits.shape.everyday.pants, 2 / 6);
+  close(habits.shape.everyday.shorts, -2 / 6);
+  assert.equal(habits.shape.everyday.jeans, undefined);
+});

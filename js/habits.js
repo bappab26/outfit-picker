@@ -5,7 +5,7 @@ import { ALLOWED_STYLES, MAIN_PIECES, SHAPE_OF } from './rules.js';
 import { SETTINGS } from './settings.js';
 
 export const DIARY_KINDS = ['wore', 'like', 'dislike'];
-const SHAPES = Object.values(SHAPE_OF);
+const SHAPES = [...new Set(Object.values(SHAPE_OF))];
 
 // The same key for two colors in either order; 'black|black' for two black pieces.
 export function colorPairKey(a, b) {

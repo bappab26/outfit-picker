@@ -10,7 +10,7 @@ const today = '2026-10-25';
 const zero = () => 0;
 const base = (opts = {}) => outfitOf(m('t', 'tops', { color: 'red', ...opts }), m('p', 'pants', { color: 'green', ...opts }), m('s', 'shoes', { color: 'black', ...opts }));
 const withTop = (topOpts) => outfitOf(m('t', 'tops', { color: 'red', ...topOpts }), m('p', 'pants', { color: 'green' }), m('s', 'shoes', { color: 'black' }));
-const score = (o, data = blankData(), extra = {}) => scoreOutfit(o, data, { today, somethingDifferent: false, rng: zero, ...extra });
+const score = (o, data = blankData(), extra = {}) => scoreOutfit(o, data, { today, boostForgotten: false, rng: zero, ...extra });
 const pick = (items, extra = {}) => pickOutfits(items, blankData(), { occasion: 'everyday', temperature: 'mild', today, rng: zero, ...extra });
 
 test('color score adds up every pair', () => {
@@ -29,9 +29,9 @@ test('a piece worn in the last 3 days loses 3 points', () => {
   assert.equal(score(withTop({ lastWorn: '2026-10-22' })), 5);
 });
 
-test('something different adds 4 per forgotten piece', () => {
-  assert.equal(score(base(), blankData(), { somethingDifferent: true }), 17);
-  assert.equal(score(withTop({ lastWorn: '2026-10-15' }), blankData(), { somethingDifferent: true }), 13);
+test('boosting forgotten pieces adds 4 per forgotten piece', () => {
+  assert.equal(score(base(), blankData(), { boostForgotten: true }), 17);
+  assert.equal(score(withTop({ lastWorn: '2026-10-15' }), blankData(), { boostForgotten: true }), 13);
 });
 
 test('randomness adds rng() × 1.5', () => {
@@ -66,7 +66,7 @@ test('an outfit worn yesterday still steps aside, even when it fits all her habi
     shape: { everyday: { pants: 1 } },
     dressedUp: { everyday: { casual: 1, smart: -1 } },
   });
-  const [best] = pick([...favorite, ...fresh], { habits, count: 1 }).outfits;
+  const [best] = pick([...favorite, ...fresh], { habits, count: 1, forgottenCards: 0 }).outfits;
   assert.equal(best.key, 'p2|s2|t2');
 });
 
@@ -83,19 +83,39 @@ test('picks 3 outfits that share no piece', () => {
   assert.equal(new Set(ids).size, 9);
 });
 
-test('something different puts a forgotten piece in every outfit', () => {
-  const recent = { lastWorn: '2026-10-24' };
-  const items = [m('t1', 'tops', recent), m('t2', 'tops'), m('p1', 'pants', recent), m('s1', 'shoes', recent), m('s2', 'shoes', recent)];
-  const { outfits } = pick(items, { somethingDifferent: true });
-  assert.ok(outfits.length > 0);
-  for (const o of outfits) assert.ok(o.items.some((i) => i.lastWorn === null));
+// Worn 5 days ago: neither just worn nor forgotten.
+const lately = { lastWorn: '2026-10-20' };
+const latelyWardrobe = () => ['a', 'b', 'c', 'd'].flatMap((x) => [m(`t${x}`, 'tops', lately), m(`p${x}`, 'pants', lately), m(`s${x}`, 'shoes', lately)]);
+
+test('one of the three outfits has a forgotten piece, shown last and marked', () => {
+  const items = [...latelyWardrobe(), m('old', 'tops', { lastWorn: '2026-08-01' })];
+  const { outfits } = pick(items);
+  assert.equal(outfits.length, 3);
+  assert.ok(outfits[2].forgotten);
+  assert.ok(outfits[2].items.some((i) => i.id === 'old'));
+  assert.ok(!outfits[0].forgotten && !outfits[1].forgotten);
 });
 
-test('notes all-recent when nothing is forgotten', () => {
-  const recent = { lastWorn: '2026-10-24' };
-  const r = pick([m('t', 'tops', recent), m('p', 'pants', recent), m('s', 'shoes', recent)], { somethingDifferent: true });
-  assert.equal(r.outfits.length, 1);
-  assert.deepEqual(r.notes, ['all-recent']);
+test('the forgotten outfit is the best one that has a forgotten piece', () => {
+  // The forgotten red top clashes with the green pants; with the black pants it doesn't.
+  const items = [m('t', 'tops', lately), m('pg', 'pants', { ...lately, color: 'green' }), m('pb', 'pants', lately),
+    m('s', 'shoes', lately), m('red', 'tops', { color: 'red', lastWorn: null })];
+  const [only] = pick(items, { count: 1 }).outfits;
+  assert.equal(only.key, 'pb|red|s');
+});
+
+test('with nothing forgotten, three ordinary outfits and no note', () => {
+  const r = pick(latelyWardrobe());
+  assert.equal(r.outfits.length, 3);
+  assert.ok(r.outfits.every((o) => !o.forgotten));
+  assert.deepEqual(r.notes, []);
+});
+
+test('forgottenCards: 0 leaves the forgotten pieces to chance', () => {
+  const items = [m('t', 'tops', lately), m('old', 'tops', { lastWorn: '2026-08-01', color: 'red' }), m('p', 'pants', { ...lately, color: 'green' }), m('s', 'shoes', lately)];
+  const [only] = pick(items, { count: 1, forgottenCards: 0 }).outfits;
+  assert.equal(only.key, 'p|s|t');
+  assert.ok(!only.forgotten);
 });
 
 test('exclude skips shown outfits, but shows them again when nothing else exists', () => {
@@ -116,13 +136,15 @@ test('returns fewer than 3 outfits when that is all there is', () => {
 // OneDrive item ids are long (e.g. '01BYE5RZ6QN3ZWBTUFOFD3GSPGOHDJD36K'), which matters for key building.
 const oneDriveId = (n) => `01BYE5RZ${String(n).padStart(4, '0')}N3ZWBTUFOFD3GSPGOHDJD3`;
 
+// 94 pieces, with hoodies and sweatshirts that can go over any of the 25 tops.
 function bigWardrobe({ withWearDates = false } = {}) {
-  const counts = { tops: 30, pants: 15, skirts: 10, dresses: 10, shoes: 15, outerwear: 10 };
+  const counts = { tops: 25, hoodies: 6, sweatshirts: 4, pants: 6, jeans: 5, shorts: 4, skirts: 8, dresses: 10, shoes: 15, jackets: 6, coats: 5 };
   let n = 0;
   return Object.entries(counts).flatMap(([cat, count]) => Array.from({ length: count }, () => {
     n += 1;
     const lastWorn = withWearDates ? `2026-10-${String(1 + (n % 24)).padStart(2, '0')}` : null;
-    return m(oneDriveId(n), cat, { color: COLORS[n % COLORS.length], warmth: cat === 'outerwear' ? 'light' : 'medium', lastWorn });
+    const warmth = cat === 'jackets' || cat === 'coats' ? 'light' : 'medium';
+    return m(oneDriveId(n), cat, { color: COLORS[n % COLORS.length], warmth, lastWorn });
   }));
 }
 
@@ -135,17 +157,16 @@ function assertFast(items, extra, data = blankData()) {
   assert.equal(r.outfits.length, 3);
 }
 
-test('a 90-piece wardrobe picks in under 250 ms', () => {
+test('a big wardrobe picks in under 250 ms, with a forgotten-piece outfit', () => {
   assertFast(bigWardrobe());
 });
 
-test('a 90-piece wardrobe with wear history picks in under 250 ms, with Something different too', () => {
+test('a big wardrobe with wear history picks in under 250 ms', () => {
   const items = bigWardrobe({ withWearDates: true });
   assertFast(items);
-  assertFast(items, { somethingDifferent: true });
 });
 
-test('a 90-piece wardrobe with likes and dislikes picks in under 250 ms', () => {
+test('a big wardrobe with likes and dislikes picks in under 250 ms', () => {
   const items = bigWardrobe({ withWearDates: true });
   const data = blankData();
   for (let i = 0; i < 40; i++) data.pairScores[`${items[i].id}|${items[i + 30].id}`] = 1;
@@ -153,7 +174,7 @@ test('a 90-piece wardrobe with likes and dislikes picks in under 250 ms', () => 
   assertFast(items, {}, data);
 });
 
-test('a 90-piece wardrobe with a full diary picks in under 250 ms', () => {
+test('a big wardrobe with a full diary picks in under 250 ms', () => {
   const items = bigWardrobe({ withWearDates: true });
   const data = blankData();
   for (const item of items) data.items[item.id] = item;
@@ -180,4 +201,18 @@ test('pickOutfits ranks outfits the same way scoreOutfit scores them', () => {
   const [best] = pickOutfits(items, data, { occasion: 'everyday', temperature: 'mild', today, rng: zero, count: 1 }).outfits;
   assert.equal(best.key, 'p|s|t1');
   assert.ok(score(best, data) > score(outfitOf(items[1], items[2], items[3]), data));
+});
+
+test('more pieces do not score higher just for having more pairs', () => {
+  const three = outfitOf(m('t', 'tops'), m('p', 'pants'), m('s', 'shoes'));
+  const five = outfitOf(m('t', 'tops'), m('h', 'hoodies'), m('p', 'pants'), m('s', 'shoes'), m('j', 'jackets'));
+  const dress = outfitOf(m('d', 'dresses'), m('s', 'shoes'));
+  assert.equal(score(three), 6); // 3 neutral pairs × 2
+  assert.equal(score(five), 6); // 10 neutral pairs, counted as 3
+  assert.equal(score(dress), 6); // 1 neutral pair, counted as 3
+});
+
+test('the forgotten-piece bonus counts as if the outfit had 3 pieces', () => {
+  const five = outfitOf(m('t', 'tops'), m('h', 'hoodies'), m('p', 'pants'), m('s', 'shoes'), m('j', 'jackets'));
+  assert.equal(score(five, blankData(), { boostForgotten: true }), 6 + 12); // 5 forgotten pieces × 4, counted as 3
 });

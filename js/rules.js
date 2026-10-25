@@ -5,8 +5,8 @@ import { daysBetween } from './dates.js';
 import { outfitKey } from './keys.js';
 import { SETTINGS } from './settings.js';
 
-// Order of pieces on an outfit card.
-export const CATEGORIES = ['tops', 'dresses', 'pants', 'skirts', 'shoes', 'outerwear'];
+// Order of pieces on an outfit card: what goes on first comes first.
+export const CATEGORIES = ['tops', 'hoodies', 'sweatshirts', 'dresses', 'pants', 'jeans', 'shorts', 'skirts', 'shoes', 'jackets', 'coats'];
 export const OCCASIONS = ['everyday', 'work', 'evening', 'special', 'home'];
 export const TEMPERATURES = ['cold', 'mild', 'hot'];
 // From most relaxed to most dressed up; "one step off" counts along this list.
@@ -21,14 +21,36 @@ export const ALLOWED_STYLES = {
   home: ['cozy', 'casual'],
 };
 
-// Which outerwear can be added at each temperature.
-const OUTERWEAR_WARMTHS = { cold: ['medium', 'warm'], mild: ['light', 'medium'], hot: [] };
+// What each kind of piece is in an outfit (spec §3.2). A layer (hoodie or sweatshirt) is worn
+// on its own as the top or over a top; an outer piece (jacket or coat) goes over everything.
+export const ROLES = {
+  tops: 'top',
+  hoodies: 'layer',
+  sweatshirts: 'layer',
+  dresses: 'dress',
+  pants: 'bottom',
+  jeans: 'bottom',
+  shorts: 'bottom',
+  skirts: 'bottom',
+  shoes: 'shoes',
+  jackets: 'outer',
+  coats: 'outer',
+};
 
-// Pieces that must match the occasion exactly; shoes and outerwear may be one step off.
-export const MAIN_PIECES = ['tops', 'pants', 'skirts', 'dresses'];
+// Which jackets and coats can be added at each temperature.
+const OUTER_WARMTHS = { cold: ['medium', 'warm'], mild: ['light', 'medium'], hot: [] };
 
-// An outfit's shape, for learning her habits (spec §3.6).
-export const SHAPE_OF = { dresses: 'dress', skirts: 'skirt', pants: 'pants' };
+// Pieces that must match the occasion exactly; shoes, jackets and coats may be one step off.
+export const MAIN_PIECES = CATEGORIES.filter((c) => ['top', 'layer', 'dress', 'bottom'].includes(ROLES[c]));
+
+// An outfit's shape, for learning her habits (spec §3.6). Jeans count as pants.
+export const SHAPE_OF = { dresses: 'dress', skirts: 'skirt', pants: 'pants', jeans: 'pants', shorts: 'shorts' };
+
+// A big wardrobe makes too many outfits to score them all on a phone. So when picking, only
+// the best UNDER_TOPS tops go under each hoodie or sweatshirt, and only the best KEEP outfits
+// get a jacket or coat (spec §3.2).
+const UNDER_TOPS = 4;
+const KEEP = 500;
 
 export function fitsStyle(item, occasion) {
   const allowed = ALLOWED_STYLES[occasion];
@@ -42,9 +64,11 @@ export function fitsStyle(item, occasion) {
 export function fitsTemperature(item, temperature) {
   if (temperature === 'hot') return item.warmth !== 'warm';
   if (temperature === 'cold') {
-    // Shorts, thin trousers and sandals stay home; light skirts and dresses
+    // Shorts, thin trousers and jeans, and sandals stay home; light skirts and dresses
     // are fine with tights, and light tops go under a coat.
-    return !((item.category === 'pants' || item.category === 'shoes') && item.warmth === 'light');
+    if (item.category === 'shorts') return false;
+    const thin = ['pants', 'jeans', 'shoes'].includes(item.category) && item.warmth === 'light';
+    return !thin;
   }
   return true;
 }
@@ -68,48 +92,77 @@ function boldColors(pieces) {
   return bold;
 }
 
-// Every outfit that fits the occasion and temperature. `items` must be fully labeled.
-export function buildOutfits(items, { occasion, temperature }) {
-  const fitting = items.filter((i) => fitsStyle(i, occasion) && fitsTemperature(i, temperature));
-  const of = (category) => fitting.filter((i) => i.category === category);
-  const tops = of('tops');
-  const bottoms = [...of('pants'), ...of('skirts')];
-  const dresses = of('dresses');
-  const shoes = of('shoes');
-  const outerwear = of('outerwear').filter((o) => OUTERWEAR_WARMTHS[temperature].includes(o.warmth));
+// The `count` lists of pieces that `rank` scores highest.
+function best(lists, count, rank) {
+  if (lists.length <= count) return lists;
+  return lists
+    .map((pieces) => ({ pieces, score: rank(makeOutfit(pieces)) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(({ pieces }) => pieces);
+}
 
-  const bases = [];
-  for (const s of shoes) {
-    for (const t of tops) for (const b of bottoms) bases.push([t, b, s]);
-    for (const d of dresses) bases.push([d, s]);
+// Every outfit that fits the occasion and temperature. `items` must be fully labeled.
+// With `rank` (an outfit's score), a big wardrobe is cut down while building, as above.
+export function buildOutfits(items, { occasion, temperature }, { rank = null, underTops = UNDER_TOPS, keep = KEEP } = {}) {
+  const fitting = items.filter((i) => fitsStyle(i, occasion) && fitsTemperature(i, temperature));
+  const of = (role) => fitting.filter((i) => ROLES[i.category] === role);
+  const tops = of('top');
+  const layers = of('layer');
+  const bottoms = of('bottom');
+  const dresses = of('dress');
+  const shoes = of('shoes');
+  const outers = of('outer').filter((o) => OUTER_WARMTHS[temperature].includes(o.warmth));
+  const bestOf = (lists, count) => (rank ? best(lists, count, rank) : lists);
+
+  // A top, a hoodie or sweatshirt on its own, or (unless it's hot) a hoodie or sweatshirt over a top.
+  const uppers = [...tops, ...layers].map((p) => [p]);
+  if (temperature !== 'hot') {
+    for (const layer of layers) uppers.push(...bestOf(tops.map((t) => [t, layer]), underTops));
   }
 
-  const notes = [];
-  // At home a coat is never needed; a cardigan is a choice.
-  const coatRequired = temperature === 'cold' && occasion !== 'home';
-  let layers;
-  if (coatRequired) layers = outerwear.length ? outerwear : [null];
-  else layers = [null, ...outerwear];
+  let bases = [];
+  for (const s of shoes) {
+    for (const u of uppers) for (const b of bottoms) bases.push([...u, b, s]);
+    for (const d of dresses) bases.push([d, s]);
+  }
+  bases = bestOf(bases.filter((base) => boldColors(base).size <= SETTINGS.maxBoldColors), keep);
+
+  const coatRequired = needsCoat({ occasion, temperature });
+  let extras;
+  if (coatRequired) extras = outers.length ? outers : [null];
+  else extras = [null, ...outers];
 
   const outfits = [];
   for (const base of bases) {
     const baseBold = boldColors(base);
-    if (baseBold.size > SETTINGS.maxBoldColors) continue;
-    for (const layer of layers) {
-      if (layer && !isNeutral(layer.color) && !baseBold.has(layer.color) && baseBold.size >= SETTINGS.maxBoldColors) continue;
-      outfits.push(makeOutfit(layer ? [...base, layer] : base));
+    for (const outer of extras) {
+      if (outer && !isNeutral(outer.color) && !baseBold.has(outer.color) && baseBold.size >= SETTINGS.maxBoldColors) continue;
+      outfits.push(makeOutfit(outer ? [...base, outer] : base));
     }
   }
 
-  if (outfits.length) {
-    if (coatRequired && !outerwear.length) notes.push('add-coat');
-  } else {
-    const has = (category) => items.some((i) => i.category === category);
-    if (!has('shoes')) notes.push('add-shoes');
-    if (!has('dresses') && !(has('tops') && (has('pants') || has('skirts')))) notes.push('add-main');
-    if (!notes.length) notes.push('no-match');
+  return { outfits, notes: outfitNotes(items, { occasion, temperature }, outfits.length > 0) };
+}
+
+// At home a coat is never needed; a cardigan is a choice.
+function needsCoat({ occasion, temperature }) {
+  return temperature === 'cold' && occasion !== 'home';
+}
+
+// What to tell her: a coat to add, or why no outfit is possible.
+function outfitNotes(items, { occasion, temperature }, hasOutfits) {
+  if (hasOutfits) {
+    const fittingOuter = items.some((i) => ROLES[i.category] === 'outer' && OUTER_WARMTHS[temperature].includes(i.warmth)
+      && fitsStyle(i, occasion) && fitsTemperature(i, temperature));
+    return needsCoat({ occasion, temperature }) && !fittingOuter ? ['add-coat'] : [];
   }
-  return { outfits, notes };
+  const notes = [];
+  const has = (role) => items.some((i) => ROLES[i.category] === role);
+  if (!has('shoes')) notes.push('add-shoes');
+  if (!has('dress') && !((has('top') || has('layer')) && has('bottom'))) notes.push('add-main');
+  if (!notes.length) notes.push('no-match');
+  return notes;
 }
 
 // Not worn for a long time, or never worn.
@@ -117,11 +170,8 @@ export function isForgotten(item, today) {
   return item.lastWorn === null || daysBetween(item.lastWorn, today) >= SETTINGS.forgottenDays;
 }
 
-function pieceFreshness(item, today, somethingDifferent) {
-  let points = 0;
-  if (item.lastWorn && daysBetween(item.lastWorn, today) < SETTINGS.recentDays) points += SETTINGS.recentPenalty;
-  if (somethingDifferent && isForgotten(item, today)) points += SETTINGS.forgottenBonus;
-  return points;
+function isRecent(item, today) {
+  return Boolean(item.lastWorn) && daysBetween(item.lastWorn, today) < SETTINGS.recentDays;
 }
 
 const NO_HABITS = { colorPairs: {}, colors: {}, shape: {}, dressedUp: {} };
@@ -129,7 +179,7 @@ const NO_HABITS = { colorPairs: {}, colors: {}, shape: {}, dressedUp: {} };
 // Spec §3.4: colors and taste per pair, the outfit's own penalty, freshness per piece, a little randomness,
 // and her habits (§3.6) from learnHabits(). Works out everything that depends only on pieces once,
 // so scoring each of 100,000+ candidates is just table lookups. Requires pieces[i].index === i.
-function makeScorer(pieces, data, { today, somethingDifferent, rng, habits = null, occasion }) {
+function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits = null, occasion }) {
   const points = SETTINGS.habits.points;
   const learned = habits ?? NO_HABITS;
   const n = pieces.length;
@@ -145,10 +195,12 @@ function makeScorer(pieces, data, { today, somethingDifferent, rng, habits = nul
       pairHabits[i * n + j] = pairHabits[j * n + i] = learned.colorPairs[colorKey] ?? 0;
     }
   }
-  const fresh = pieces.map((p) => pieceFreshness(p, today, somethingDifferent));
+  // Every just-worn piece loses points; the forgotten-piece bonus is scaled to 3 pieces like the pairs.
+  const recent = pieces.map((p) => (isRecent(p, today) ? SETTINGS.recentPenalty : 0));
+  const bonus = pieces.map((p) => (boostForgotten && isForgotten(p, today) ? SETTINGS.forgottenBonus : 0));
   const shapeHabits = learned.shape[occasion] ?? {};
   const styleHabits = learned.dressedUp[occasion] ?? {};
-  // Every outfit has exactly one dress, skirt or pants, so shape points add up per piece.
+  // Every outfit has exactly one dress or bottom, so shape points add up per piece.
   const shapePoints = pieces.map((p) => points.shape * (shapeHabits[SHAPE_OF[p.category]] ?? 0));
   const colorHabits = pieces.map((p) => learned.colors[p.color] ?? 0);
   const isMain = pieces.map((p) => MAIN_PIECES.includes(p.category));
@@ -159,6 +211,8 @@ function makeScorer(pieces, data, { today, somethingDifferent, rng, habits = nul
   return (outfit) => {
     const ps = outfit.items;
     let score = 0;
+    let pairPoints = 0;
+    let forgottenPoints = 0;
     // Habits are averaged over pairs and pieces, so an outfit doesn't gain just by having a coat.
     let pairHabit = 0;
     let colorHabit = 0;
@@ -166,18 +220,24 @@ function makeScorer(pieces, data, { today, somethingDifferent, rng, habits = nul
     let mains = 0;
     for (let i = 0; i < ps.length; i++) {
       const a = ps[i].index;
-      score += fresh[a] + shapePoints[a];
+      score += recent[a] + shapePoints[a];
+      forgottenPoints += bonus[a];
       colorHabit += colorHabits[a];
       if (isMain[a]) {
         styleHabit += styleHabitsOf[a];
         mains += 1;
       }
       for (let j = i + 1; j < ps.length; j++) {
-        score += pairs[a * n + ps[j].index];
+        pairPoints += pairs[a * n + ps[j].index];
         pairHabit += pairHabits[a * n + ps[j].index];
       }
     }
-    score += (points.colorPairs * pairHabit) / ((ps.length * (ps.length - 1)) / 2);
+    const pairCount = (ps.length * (ps.length - 1)) / 2;
+    // Color and taste points count as if the outfit had 3 pairs (top, bottom, shoes), so a hoodie
+    // and a jacket don't win just by adding pairs, and a dress with shoes (1 pair) isn't behind.
+    score += (pairPoints * 3) / pairCount;
+    score += (forgottenPoints * 3) / ps.length;
+    score += (points.colorPairs * pairHabit) / pairCount;
     score += (points.colors * colorHabit) / ps.length;
     if (mains) score += (points.dressedUp * styleHabit) / mains;
     if (penalized.size && ps.every((p) => penalized.has(p.id))) score += data.outfitPenalties[outfit.key] ?? 0;
@@ -192,44 +252,58 @@ export function scoreOutfit(outfit, data, options) {
   return makeScorer(pieces, data, options)({ key: outfit.key, items: pieces });
 }
 
-// The best `count` outfits, sharing no piece. `exclude` holds keys of outfits already
-// on screen (Shuffle); they come back only when nothing else is left.
+// The best `count` outfits, sharing no piece (spec §3.5). Up to `forgottenCards` of them have
+// a piece she hasn't worn in a long time: those come last and are marked `forgotten`.
+// `exclude` holds keys of outfits already on screen (Shuffle); they come back only when
+// nothing else is left. `avoidItemIds` are pieces that can't be used (on the other cards).
 export function pickOutfits(items, data, {
-  occasion, temperature, somethingDifferent = false, today, rng = Math.random, habits = null,
-  exclude = [], avoidItemIds = [], count = SETTINGS.suggestions,
+  occasion, temperature, today, rng = Math.random, habits = null,
+  exclude = [], avoidItemIds = [], count = SETTINGS.suggestions, forgottenCards = 1,
 }) {
-  const pieces = withIndexes(items);
-  const built = buildOutfits(pieces, { occasion, temperature });
-  const notes = [...built.notes];
-  let candidates = built.outfits;
-
-  if (somethingDifferent) {
-    const forgotten = new Set(pieces.filter((i) => isForgotten(i, today)).map((i) => i.id));
-    const withForgotten = candidates.filter((o) => o.items.some((i) => forgotten.has(i.id)));
-    if (withForgotten.length) candidates = withForgotten;
-    else if (candidates.length) notes.push('all-recent');
-  }
-  const avoid = new Set(avoidItemIds);
-  if (avoid.size) candidates = candidates.filter((o) => !o.items.some((i) => avoid.has(i.id)));
-
-  const score = makeScorer(pieces, data, { today, somethingDifferent, rng, habits, occasion });
-  const ranked = candidates
-    .map((outfit) => ({ outfit, score: score(outfit) }))
-    .sort((a, b) => b.score - a.score);
-
+  const ctx = { occasion, temperature };
   const excluded = new Set(exclude);
-  const picked = [];
-  const used = new Set();
-  const take = (allowExcluded) => {
-    for (const { outfit } of ranked) {
-      if (picked.length >= count) return;
-      if (picked.includes(outfit) || (!allowExcluded && excluded.has(outfit.key))) continue;
-      if (outfit.items.some((i) => used.has(i.id))) continue;
-      picked.push(outfit);
-      for (const i of outfit.items) used.add(i.id);
-    }
+  // Pieces on a picked outfit (or on the other cards) can't be used again.
+  const used = new Set(avoidItemIds);
+  const all = items.filter((i) => !used.has(i.id));
+
+  // The outfits made from the pieces still free, best first, by the score with or
+  // without the forgotten-piece bonus.
+  const rankFree = (boostForgotten) => {
+    const pieces = withIndexes(all.filter((i) => !used.has(i.id)));
+    const score = makeScorer(pieces, data, { today, boostForgotten, rng, habits, occasion });
+    return buildOutfits(pieces, ctx, { rank: score }).outfits
+      .map((outfit) => ({ outfit, score: score(outfit) }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ outfit }) => outfit);
   };
-  take(false);
-  if (picked.length < count) take(true);
-  return { outfits: picked, notes };
+
+  // Up to `upTo` outfits that pass `fits`, sharing no piece. Building cuts a big wardrobe down,
+  // so when the list runs out of outfits that share no piece, it is built again from what's left.
+  const pick = (boostForgotten, upTo, fits) => {
+    const picked = [];
+    const takeFrom = (ranked, allowExcluded) => {
+      let added = false;
+      for (const outfit of ranked) {
+        if (picked.length >= upTo) break;
+        if (!fits(outfit) || (!allowExcluded && excluded.has(outfit.key))) continue;
+        if (outfit.items.some((i) => used.has(i.id))) continue;
+        picked.push(outfit);
+        for (const i of outfit.items) used.add(i.id);
+        added = true;
+      }
+      return added;
+    };
+    while (picked.length < upTo && takeFrom(rankFree(boostForgotten), false));
+    if (picked.length < upTo && excluded.size) takeFrom(rankFree(boostForgotten), true);
+    return picked;
+  };
+
+  const forgotten = new Set(all.filter((i) => isForgotten(i, today)).map((i) => i.id));
+  const forgottenPicks = forgottenCards > 0 && forgotten.size
+    ? pick(true, Math.min(forgottenCards, count), (o) => o.items.some((i) => forgotten.has(i.id)))
+    : [];
+  for (const outfit of forgottenPicks) outfit.forgotten = true;
+  const ordinary = pick(false, count - forgottenPicks.length, () => true);
+  const outfits = [...ordinary, ...forgottenPicks];
+  return { outfits, notes: outfitNotes(all, ctx, outfits.length > 0) };
 }

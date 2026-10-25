@@ -11,7 +11,8 @@ export const SETTINGS = {
   // A piece worn fewer than recentDays days ago loses recentPenalty points.
   recentDays: 3,
   recentPenalty: -3,
-  // With "Something different", a piece unworn for forgottenDays days (or never worn) gains forgottenBonus.
+  // A piece unworn for forgottenDays days (or never worn) is forgotten. One outfit in three has one
+  // when possible, picked with forgottenBonus added for each forgotten piece.
   forgottenDays: 30,
   forgottenBonus: 4,
   // Each outfit gets a random 0–randomMax extra points, so Shuffle gives new picks.

@@ -8,18 +8,23 @@ import { learnHabits, styleSummary } from './habits.js';
 import { createGraph, GraphError } from './onedrive.js';
 import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
-import { allItems, createSaver, labeledItems, unlabeledIds } from './store.js';
+import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
 import { renderHome } from './ui/home.js';
 import { renderLabel } from './ui/label.js';
-import { APP_NAME } from './ui/labels.js';
+import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
 import { renderWardrobe } from './ui/wardrobe.js';
 
 const MODE_KEY = 'outfit-picker:mode';
 // The email she signed in with, so being signed out (Microsoft's sign-in library forgets her
 // after a restart unless she chose "Stay signed in") takes one tap to undo.
 const ACCOUNT_KEY = 'outfit-picker:account';
+// Her name for the app, so the sign-in screen shows it before her data has loaded.
+const NAME_KEY = 'outfit-picker:name';
 const root = document.getElementById('app');
+
+// No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
+document.addEventListener('gesturestart', (event) => event.preventDefault());
 
 // localStorage can be missing or throw (private browsing); the app still works without it.
 const storage = {
@@ -49,7 +54,20 @@ const state = {
   signinNote: null,
   // Labeling: 'new' walks through `queue`; 'edit' changes one piece from the wardrobe.
   label: { mode: 'new', queue: [], index: 0, id: null },
+  // True while she is typing a new name for the app.
+  renaming: false,
 };
+
+function displayName() {
+  return state.data?.settings.name ?? storage.getItem(NAME_KEY) ?? DEFAULT_NAME;
+}
+
+// Only her own (OneDrive) name is remembered for the sign-in screen, not the sample's.
+function rememberName() {
+  if (state.source?.mode !== 'onedrive') return;
+  if (state.data.settings.name) storage.setItem(NAME_KEY, state.data.settings.name);
+  else storage.removeItem(NAME_KEY);
+}
 
 // ----- Outfits -----
 
@@ -63,9 +81,15 @@ function choiceDay() {
   return { today: todayISO(), occasion: state.data.settings.occasion };
 }
 
+// A card on the home screen. `undoLike` and `undoWore` take back a 👍 or Wore this;
+// `undoDislike` brings back the outfit this card replaced.
+function newCard(outfit) {
+  return { outfit, forgotten: Boolean(outfit.forgotten), liked: false, worn: false, undoLike: null, undoWore: null, undoDislike: null };
+}
+
 function recompute(extra) {
   const { outfits, notes } = pickOutfits(labeledItems(state.data), state.data, pickOptions(extra));
-  state.cards = outfits.map((outfit) => ({ outfit, liked: false, worn: false }));
+  state.cards = outfits.map(newCard);
   state.notes = notes;
 }
 
@@ -86,41 +110,66 @@ const homeActions = {
     recompute();
     render();
   },
-  toggleDifferent() {
-    state.data.settings.somethingDifferent = !state.data.settings.somethingDifferent;
-    changed();
-    recompute();
-    render();
-  },
   shuffle() {
-    recompute({ exclude: state.cards.map((c) => c.outfit.key) });
+    recompute({ exclude: state.cards.filter((c) => c.outfit).map((c) => c.outfit.key) });
     render();
   },
   like(i) {
-    like(state.data, state.cards[i].outfit, choiceDay());
-    state.cards[i].liked = true;
-    changed();
-    render();
-  },
-  dislike(i) {
-    const disliked = state.cards[i].outfit;
-    dislike(state.data, disliked, choiceDay());
-    const others = state.cards.filter((_, j) => j !== i);
-    const [next] = pickOutfits(labeledItems(state.data), state.data, pickOptions({
-      exclude: [disliked.key, ...others.map((c) => c.outfit.key)],
-      avoidItemIds: others.flatMap((c) => c.outfit.items.map((item) => item.id)),
-      count: 1,
-    })).outfits;
-    // Never put the outfit she just turned down straight back on screen.
-    if (next && next.key !== disliked.key) state.cards[i] = { outfit: next, liked: false, worn: false };
-    else state.cards.splice(i, 1);
+    const c = state.cards[i];
+    if (c.undoLike) c.undoLike();
+    c.undoLike = c.undoLike ? null : like(state.data, c.outfit, choiceDay());
+    c.liked = Boolean(c.undoLike);
+    c.undoDislike = null; // once she uses the new card, the one it replaced is gone
     changed();
     render();
   },
   wore(i) {
-    woreThis(state.data, state.cards[i].outfit, choiceDay());
-    state.cards[i].worn = true;
+    const c = state.cards[i];
+    if (c.undoWore) c.undoWore();
+    c.undoWore = c.undoWore ? null : woreThis(state.data, c.outfit, choiceDay());
+    c.worn = Boolean(c.undoWore);
+    c.undoDislike = null;
     changed();
+    render();
+  },
+  dislike(i) {
+    const before = state.cards[i];
+    const undo = dislike(state.data, before.outfit, choiceDay());
+    const others = state.cards.filter((c, j) => j !== i && c.outfit);
+    const [next] = pickOutfits(labeledItems(state.data), state.data, pickOptions({
+      exclude: [before.outfit.key, ...others.map((c) => c.outfit.key)],
+      avoidItemIds: others.flatMap((c) => c.outfit.items.map((item) => item.id)),
+      count: 1,
+      forgottenCards: before.forgotten ? 1 : 0,
+    })).outfits;
+    const undoDislike = { before, undo };
+    // Never put the outfit she just turned down straight back on screen.
+    if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike };
+    else state.cards[i] = { outfit: null, undoDislike };
+    changed();
+    render();
+  },
+  undoDislike(i) {
+    const { before, undo } = state.cards[i].undoDislike;
+    undo();
+    state.cards[i] = before;
+    changed();
+    render();
+  },
+  startRename() {
+    state.renaming = true;
+    render();
+  },
+  saveName(value) {
+    const name = tidyName(value);
+    state.data.settings.name = name === DEFAULT_NAME ? null : name;
+    state.renaming = false;
+    rememberName();
+    changed();
+    render();
+  },
+  cancelRename() {
+    state.renaming = false;
     render();
   },
   openLabel() {
@@ -135,6 +184,7 @@ const homeActions = {
   async exitSample() {
     await state.saver.flush();
     storage.removeItem(MODE_KEY);
+    state.data = null; // the sign-in screen shows her own name, not the sample's
     show('signin');
   },
 };
@@ -206,6 +256,7 @@ async function openWardrobeData(source) {
   state.source = source;
   const { data } = await source.load();
   state.data = data;
+  rememberName();
   state.saver = createSaver((text) => source.save(text), {
     onStatus: (status) => {
       if (status === 'error') setSaveError(true);
@@ -264,24 +315,25 @@ async function onSignIn() {
 function renderSignIn() {
   const remembered = storage.getItem(ACCOUNT_KEY);
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, APP_NAME),
+    h('h1', {}, displayName()),
     h('p', { class: 'lead' }, 'Outfit ideas from the clothes in your OneDrive.'),
     state.signinNote && h('p', { class: 'hint', role: 'status' }, state.signinNote),
     h('button', { class: 'primary', disabled: !isConfigured(), onclick: onSignIn },
       remembered ? `Continue as ${remembered}` : 'Sign in with Microsoft'),
     !isConfigured() && h('p', { class: 'hint' }, 'Add your Microsoft app ID in js/config.js (see README).'),
-    h('button', { class: 'secondary', onclick: enterSample }, 'Try with sample clothes')));
+    h('button', { class: 'secondary', onclick: enterSample }, 'Try with sample clothes')),
+  h('footer', { class: 'version' }, VERSION_LINE));
 }
 
 function renderLoading() {
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, APP_NAME),
+    h('h1', {}, displayName()),
     h('p', { class: 'lead', role: 'status' }, 'Loading your wardrobe…')));
 }
 
 function renderError() {
   append(root, h('section', { class: 'signin' },
-    h('h1', {}, APP_NAME),
+    h('h1', {}, displayName()),
     h('p', { class: 'lead', role: 'alert' },
       state.error.offline ? "You're offline. Connect to load your wardrobe." : "Couldn't reach OneDrive."),
     h('button', { class: 'primary', onclick: () => state.error.retry() }, 'Retry')));
@@ -290,6 +342,8 @@ function renderError() {
 function renderHomeScreen() {
   renderHome(root, {
     settings: state.data.settings,
+    name: displayName(),
+    renaming: state.renaming,
     cards: state.cards,
     notes: state.notes,
     newCount: unlabeledIds(state.data).length,
@@ -337,6 +391,7 @@ const SCREENS = {
 };
 
 function render() {
+  document.title = displayName();
   clear(root);
   SCREENS[state.screen]();
 }

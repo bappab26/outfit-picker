@@ -17,7 +17,8 @@ export function emptyData() {
     pairScores: {},
     outfitPenalties: {},
     diary: [],
-    settings: { occasion: 'everyday', temperature: 'mild', somethingDifferent: false },
+    // name: what she calls the app; null shows the default name.
+    settings: { occasion: 'everyday', temperature: 'mild', name: null },
   };
 }
 
@@ -26,6 +27,13 @@ function numbersOnly(raw) {
   if (!isObject(raw)) return out;
   for (const [key, value] of Object.entries(raw)) if (Number.isFinite(value)) out[key] = value;
   return out;
+}
+
+// Her name for the app, tidied up; null when there is none.
+export function tidyName(raw) {
+  if (typeof raw !== 'string') return null;
+  const name = raw.trim().slice(0, 40).trim();
+  return name || null;
 }
 
 // Keeps the diary lines that make sense, newest last, at most diaryMax of them.
@@ -83,7 +91,7 @@ export function parseData(text) {
   data.settings = {
     occasion: oneOf(OCCASIONS, settings.occasion, data.settings.occasion),
     temperature: oneOf(TEMPERATURES, settings.temperature, data.settings.temperature),
-    somethingDifferent: typeof settings.somethingDifferent === 'boolean' ? settings.somethingDifferent : false,
+    name: tidyName(settings.name),
   };
   return data;
 }

@@ -9,7 +9,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 test('emptyData has the spec shape and defaults', () => {
   assert.deepEqual(emptyData(), {
     version: 1, items: {}, pairScores: {}, outfitPenalties: {}, diary: [],
-    settings: { occasion: 'everyday', temperature: 'mild', somethingDifferent: false },
+    settings: { occasion: 'everyday', temperature: 'mild', name: null },
   });
 });
 
@@ -42,7 +42,7 @@ test('parseData repairs bad fields instead of crashing', () => {
   assert.equal(data.items.c, undefined);
   assert.deepEqual(data.pairScores, { 'a|c': 2 });
   assert.deepEqual(data.outfitPenalties, {});
-  assert.deepEqual(data.settings, { occasion: 'everyday', temperature: 'cold', somethingDifferent: false });
+  assert.deepEqual(data.settings, { occasion: 'everyday', temperature: 'cold', name: null });
   assert.deepEqual(unlabeledIds(data), ['a']);
 });
 
@@ -56,8 +56,8 @@ test('mergeListing updates a moved photo and keeps its labels', () => {
   const data = emptyData();
   mergeListing(data, [entry('a')], '2026-10-01');
   Object.assign(data.items.a, { color: 'red', warmth: 'light', style: 'casual' });
-  mergeListing(data, [entry('a', 'outerwear')], '2026-10-25');
-  assert.equal(data.items.a.category, 'outerwear');
+  mergeListing(data, [entry('a', 'jackets')], '2026-10-25');
+  assert.equal(data.items.a.category, 'jackets');
   assert.equal(data.items.a.style, 'casual');
 });
 
@@ -159,4 +159,17 @@ test('parseData keeps only the latest diary lines', () => {
   const data = parseData(JSON.stringify({ version: 1, diary }));
   assert.equal(data.diary.length, max);
   assert.deepEqual(data.diary[0].ids, ['p3']);
+});
+
+test('parseData keeps her name for the app, trimmed and at most 40 letters', () => {
+  const named = (name) => parseData(JSON.stringify({ version: 1, settings: { name } })).settings.name;
+  assert.equal(named('  my closet  '), 'my closet');
+  assert.equal(named('x'.repeat(50)), 'x'.repeat(40));
+  assert.equal(named('   '), null);
+  assert.equal(named(42), null);
+});
+
+test('parseData forgets the old Something different switch', () => {
+  const data = parseData(JSON.stringify({ version: 1, settings: { occasion: 'work', temperature: 'hot', somethingDifferent: true } }));
+  assert.deepEqual(data.settings, { occasion: 'work', temperature: 'hot', name: null });
 });
