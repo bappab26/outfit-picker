@@ -15,7 +15,7 @@ export const EGGS = {
   // Turned-down outfits a never-liked, never-worn piece is in before the app asks about it.
   nudgeAfter: 5,
   // Her birthday, as MM-DD.
-  birthday: '04-25',
+  birthday: '10-25',
   // "Go to sleep" shows from fromHour:00 until toHour:00.
   lateNight: { fromHour: 2, toHour: 5 },
 };
