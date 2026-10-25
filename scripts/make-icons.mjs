@@ -1,82 +1,19 @@
-// Draws the app icons (a white hanger with little red devil horns on the theme color) as PNG files:
+// Draws the app icons (a white T-shirt on the theme color) as PNG files:
 //   node scripts/make-icons.mjs
 // Uses only Node's built-in modules, so there is nothing to install.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
 const BACKGROUND = [0x29, 0x13, 0x3f]; // --bg in css/app.css
-const HANGER = [0xff, 0xff, 0xff];
-const HORN = [0xff, 0x4d, 0x6d];
+const SHIRT = [0xff, 0xff, 0xff];
 const SAMPLES = 4; // per pixel side, for smooth edges
 
-// Everything below is in a 0–1 square, y going down.
-const LINE = 0.068; // thickness of the hanger
-const HOOK = { x: 0.5, y: 0.36, r: 0.085 };
-const NECK = [0.5, 0.51];
-const LEFT = [0.14, 0.79];
-const RIGHT = [0.86, 0.79];
-// Degrees around the hook (0 = right, 90 = down) left open: the hook's gap at the bottom left.
-const HOOK_GAP = [90, 160];
-
-function toSegment(x, y, [ax, ay], [bx, by]) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
-}
-
-const atAngle = (degrees, r = HOOK.r) => [
-  HOOK.x + r * Math.cos((degrees * Math.PI) / 180),
-  HOOK.y + r * Math.sin((degrees * Math.PI) / 180),
-];
-
-// The hook (a ring with a gap, rounded at its end), its stem, and the triangle below.
-function onHanger(x, y) {
-  const angle = (Math.atan2(y - HOOK.y, x - HOOK.x) * 180) / Math.PI;
-  const inGap = angle > HOOK_GAP[0] && angle < HOOK_GAP[1];
-  if (!inGap && Math.abs(Math.hypot(x - HOOK.x, y - HOOK.y) - HOOK.r) <= LINE / 2) return true;
-  const [ex, ey] = atAngle(HOOK_GAP[1]);
-  if (Math.hypot(x - ex, y - ey) <= LINE / 2) return true;
-  const lines = [[atAngle(90), NECK], [NECK, LEFT], [NECK, RIGHT], [LEFT, RIGHT]];
-  return lines.some(([a, b]) => toSegment(x, y, a, b) <= LINE / 2);
-}
-
-// Two short horns on top of the hook, curving out and then up to a point.
-// Each is a curved line that gets thinner from its base to its tip.
-const LEFT_HORN = {
-  base: atAngle(-135),
-  bend: [HOOK.x - 0.125, HOOK.y - 0.11],
-  tip: [HOOK.x - 0.08, HOOK.y - 0.205],
-  width: 0.058,
-};
-const HORNS = [LEFT_HORN, {
-  base: [1 - LEFT_HORN.base[0], LEFT_HORN.base[1]],
-  bend: [1 - LEFT_HORN.bend[0], LEFT_HORN.bend[1]],
-  tip: [1 - LEFT_HORN.tip[0], LEFT_HORN.tip[1]],
-  width: LEFT_HORN.width,
-}];
-const HORN_STEPS = 40;
-
-function onHorn(x, y) {
-  return HORNS.some(({ base, bend, tip, width }) => {
-    if (x < Math.min(base[0], bend[0], tip[0]) - width || x > Math.max(base[0], bend[0], tip[0]) + width) return false;
-    if (y < Math.min(base[1], bend[1], tip[1]) - width || y > Math.max(base[1], bend[1], tip[1]) + width) return false;
-    for (let i = 0; i <= HORN_STEPS; i++) {
-      const t = i / HORN_STEPS;
-      const px = (1 - t) ** 2 * base[0] + 2 * (1 - t) * t * bend[0] + t ** 2 * tip[0];
-      const py = (1 - t) ** 2 * base[1] + 2 * (1 - t) * t * bend[1] + t ** 2 * tip[1];
-      if (Math.hypot(x - px, y - py) <= width * (1 - t) + 0.004) return true;
-    }
-    return false;
-  });
-}
-
-// The color at one point: the hanger in front, so the horns seem to grow out from behind the hook.
-function colorAt(x, y) {
-  if (onHanger(x, y)) return HANGER;
-  const inHookHole = Math.hypot(x - HOOK.x, y - HOOK.y) < HOOK.r;
-  if (!inHookHole && onHorn(x, y)) return HORN;
-  return BACKGROUND;
+// The T-shirt, in a 0–1 square: sleeves across the top, body below, a round neck cut out.
+function onShirt(x, y) {
+  const sleeves = x >= 0.2 && x <= 0.8 && y >= 0.28 && y <= 0.46;
+  const body = x >= 0.33 && x <= 0.67 && y >= 0.28 && y <= 0.76;
+  const neck = (x - 0.5) ** 2 + (y - 0.28) ** 2 < 0.075 ** 2;
+  return (sleeves || body) && !neck;
 }
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
@@ -106,15 +43,16 @@ function drawPng(size) {
     const row = py * (1 + size * 3);
     raw[row] = 0; // no filter
     for (let px = 0; px < size; px++) {
-      // The average color of SAMPLES × SAMPLES points inside the pixel.
-      const sum = [0, 0, 0];
+      let hits = 0;
       for (let sy = 0; sy < SAMPLES; sy++) {
         for (let sx = 0; sx < SAMPLES; sx++) {
-          const color = colorAt((px + (sx + 0.5) / SAMPLES) / size, (py + (sy + 0.5) / SAMPLES) / size);
-          for (let ch = 0; ch < 3; ch++) sum[ch] += color[ch];
+          if (onShirt((px + (sx + 0.5) / SAMPLES) / size, (py + (sy + 0.5) / SAMPLES) / size)) hits++;
         }
       }
-      for (let ch = 0; ch < 3; ch++) raw[row + 1 + px * 3 + ch] = Math.round(sum[ch] / (SAMPLES * SAMPLES));
+      const t = hits / (SAMPLES * SAMPLES);
+      for (let ch = 0; ch < 3; ch++) {
+        raw[row + 1 + px * 3 + ch] = Math.round(BACKGROUND[ch] + (SHIRT[ch] - BACKGROUND[ch]) * t);
+      }
     }
   }
   const header = Buffer.alloc(13);
