@@ -40,7 +40,12 @@ body {
   #app.screen-in { animation: none; }
 }
 
+/* At least as tall as the screen, so the version line can sit at the bottom (.version). */
 #app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
   padding: calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
@@ -253,7 +258,8 @@ body.no-scroll { overflow: hidden; }
 
 .topbar-spacer { min-width: 44px; }
 
-.version { margin: 28px 0 0; font-size: 13px; color: var(--muted); text-align: center; }
+/* Pushed to the bottom of the screen when there's room, else right after the screen's content. */
+.version { margin: auto 0 0; padding-top: 28px; font-size: 13px; color: var(--muted); text-align: center; }
 [hidden] { display: none !important; }
 
 .swatch {

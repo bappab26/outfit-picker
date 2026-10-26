@@ -3,7 +3,7 @@
 // The hidden bits (devil mode, the secret card…) come from ui/eggs.js.
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
 import { append, choices, h, photo } from './dom.js';
-import { birthdayCard, lateNightLine, memoryStrip, nudgeBox, rareTag, secretCard, versionLine } from './eggs.js';
+import { birthdayCard, lateNightLine, memoryStrip, nudgeBox, rareTag, secretCard } from './eggs.js';
 import { OCCASION_LABELS, TEMPERATURE_LABELS } from './labels.js';
 
 const NOTE_TEXT = {
@@ -131,8 +131,7 @@ export function renderHome(root, view, actions) {
   if (!view.hasLabeled) {
     append(root,
       h('p', { class: 'welcome' }, WELCOME),
-      view.canAdd && h('button', { class: 'primary add-clothes', onclick: actions.addClothes }, '+ Add clothes'),
-      versionLine(actions));
+      view.canAdd && h('button', { class: 'primary add-clothes', onclick: actions.addClothes }, '+ Add clothes'));
   } else {
     append(root,
       view.memory && memoryStrip(view.memory, view, actions),
@@ -142,7 +141,6 @@ export function renderHome(root, view, actions) {
       view.notes.map((note) => h('p', { class: 'note' }, NOTE_TEXT[note])),
       view.cards.map((c, i) => card(c, i, view, actions)),
       view.zoomed !== null && view.cards[view.zoomed]?.outfit && bigOutfit(view.cards[view.zoomed], view.zoomed, view, actions),
-      versionLine(actions),
     );
   }
   append(root,

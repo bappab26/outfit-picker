@@ -147,10 +147,11 @@ export function playIntro(root, from, name) {
   if (!title || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
   const { duration, easing, keyframes } = introFor(name, from, spotOf(title), { width: title.offsetWidth, height: title.offsetHeight });
   title.animate(keyframes, { duration, easing });
-  const rest = [
-    ...[...root.children].filter((el) => !el.contains(title)),
-    ...root.querySelectorAll('.topbar > :not(.app-name), .app-name .pencil'),
-  ];
+  // Everything else: what sits beside the name, beside its row, and so on up to `root`.
+  const rest = [];
+  for (let el = title; el !== root; el = el.parentElement) {
+    rest.push(...[...el.parentElement.children].filter((other) => other !== el));
+  }
   for (const el of rest) {
     el.animate([{ opacity: 0 }, { opacity: 1 }],
       { duration: FADE_MS, delay: duration * 0.55, easing: 'ease-out', fill: 'backwards' });

@@ -169,8 +169,10 @@ Push your changes to GitHub; Pages updates the site within a minute or two.
 Phones keep a copy of the app so it opens fast, and pick up a new version the next time
 it's opened. To make phones drop the old copy right away, raise the number in `CACHE_NAME`
 at the top of `sw.js` (`outfit-picker-v1` → `outfit-picker-v2`, and so on) with each update.
-Also set `VERSION` in `js/ui/labels.js` to the day's date: it shows at the bottom of the app
-("Version … · by bap bap"), so you can see which version a phone has.
+Also, in `js/ui/labels.js`, set `VERSION_NUMBER` to "1." and the same number as `CACHE_NAME`
+(`outfit-picker-v16` → `1.16`), and `VERSION` to the day's date. They show at the bottom of
+every screen ("Version 1.16 · 2026-10-25 · by bap bap"), so you can see which version a phone
+has. `npm test` checks that the two numbers match.
 If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm test` reminds you).
 
 ## Give it to your friend
@@ -222,15 +224,15 @@ to check that it's learning.
 
 Hidden surprises for her to find (don't spoil them):
 
-- Tap **Version … · by bap bap** at the bottom of the home screen 7 times quickly: devil mode
-  (red, with horns on the name). 7 more taps turn it off.
+- Tap **Version … · by bap bap** at the bottom of the home screen 6 times quickly: devil mode
+  (red, with horns on the name). 6 more taps turn it off.
 - Hold that line for about a second: a secret card with your note and her stats.
 - Rename the app with "angel" in the name: pastel colors and a halo.
 - About 1 outfit card in 150 is a **✨ Rare find**.
 - A piece she keeps turning down (in 5 👎 outfits, never liked or worn) gets
   "Why do you even own this?".
 - April 20: confetti and a birthday card, once a year.
-- Between 2 and 5 a.m.: "Go to sleep…".
+- Between 1 and 5 a.m.: "Go to sleep…".
 - "One year ago today you wore this", from her diary.
 - Her 10th, 50th, 100th Wore this (then every 100th): confetti.
 

@@ -28,7 +28,7 @@ test('taps on the version line add up while they come quickly, and start over af
   assert.equal(taps.count, 2);
   taps = countTap(taps, 1000 + 3 * EGGS.tapGapMs);
   assert.equal(taps.count, 1);
-  assert.equal(EGGS.devilTaps, 7);
+  assert.equal(EGGS.devilTaps, 6);
 });
 
 test('about one card in 150 is a rare find', () => {
@@ -50,11 +50,11 @@ test('the birthday card is in Vietnamese', () => {
   assert.equal(BIRTHDAY.thanks, 'Cảm ơn!');
 });
 
-test('late night is from 2 a.m. until 5 a.m.', () => {
+test('late night is from 1 a.m. until 5 a.m.', () => {
   const at = (hour, minute = 0) => new Date(2026, 9, 25, hour, minute);
-  assert.equal(isLateNight(at(2)), true);
+  assert.equal(isLateNight(at(1)), true);
   assert.equal(isLateNight(at(4, 59)), true);
-  assert.equal(isLateNight(at(1, 59)), false);
+  assert.equal(isLateNight(at(0, 59)), false);
   assert.equal(isLateNight(at(5)), false);
   assert.equal(isLateNight(at(23)), false);
 });

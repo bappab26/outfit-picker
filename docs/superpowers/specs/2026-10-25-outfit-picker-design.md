@@ -108,7 +108,10 @@ and a French interface (the interface is English).
   per row, its Not worn in a while tag, and the same 👍 / 👎 / Wore this buttons (👎 closes it
   and swaps the card). **×**, a tap on the dark area, or Esc closes it. The page behind stays still.
 - **Shuffle** replaces all 3 cards with 3 new ones.
-- At the bottom: "Version <date> · by bap bap" (also on the sign-in screen).
+- At the bottom of every screen: "Version <number> · <date> · by bap bap", for example
+  "Version 1.16 · 2026-10-25 · by bap bap". The number after "1." goes up by one with every
+  update (it is the number in `CACHE_NAME` in `sw.js`). The line sits at the bottom edge when
+  the screen is short, and right after the content when it is long.
 - Zooming is turned off (no pinch or double-tap zoom).
 
 ### Wardrobe screen
@@ -139,14 +142,14 @@ and a French interface (the interface is English).
 Little hidden surprises, none of which gets in the way of picking outfits. The rules are in
 `js/eggs.js`.
 
-- **Devil mode:** tapping the version line at the bottom of the home screen 7 times, each tap
+- **Devil mode:** tapping the version line at the bottom of the home screen 6 times, each tap
   within 1.5 seconds of the last, turns it on or off. From the 4th tap a countdown shows
-  ("3…", "2…", "1…"), then "Devil mode on 😈" or "Devil mode off". The accents turn red, a red
+  ("2…", "1…"), then "Devil mode on 😈" or "Devil mode off". The accents turn red, a red
   glow sits at the top of every screen and two little red horns sit on the app's name. The
   phone remembers it.
 - **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
   (light lilac background, dark text) with a gold halo over the name, and the phone's top bar
-  light. It wins over devil mode: the 7 taps then only say "Angels can't go evil 😇".
+  light. It wins over devil mode: the 6 taps then only say "Angels can't go evil 😇".
 - **Secret card:** holding the version line for 0.8 seconds opens a card with a note from
   bap bap (stored scrambled in the code, so it can't be read at a glance or found by a search)
   and her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
@@ -162,7 +165,7 @@ Little hidden surprises, none of which gets in the way of picking outfits. The r
 - **Birthday (April 20):** the first time she opens the app that day each year, confetti falls
   and a card in Vietnamese says "Chúc mừng sinh nhật! 🎂 Hôm nay bộ đồ nào cũng điểm 10."
   ("Happy birthday! Today every outfit is a 10.") with a **Cảm ơn!** ("Thank you!") button.
-- **Late night:** from 2:00 to 4:59 a.m., a line under the name says "Go to sleep. Nobody's
+- **Late night:** from 1:00 to 4:59 a.m., a line under the name says "Go to sleep. Nobody's
   judging your outfit at this hour 😴".
 - **One year ago today:** when she wore an outfit on this day a year ago, a strip above the
   occasions shows "One year ago today you wore this" with the pieces she still has (the last

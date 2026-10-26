@@ -12,6 +12,7 @@ import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
+import { versionLine } from './ui/eggs.js';
 import { renderHome } from './ui/home.js';
 import { INTRO_MAX_MS, pickIntro, playIntro, spotOf } from './ui/intro.js';
 import { renderLabel } from './ui/label.js';
@@ -34,6 +35,8 @@ const MEMORY_KEY = 'outfit-picker:memory-hidden';
 // The last opening animation (ui/intro.js), so the next one is different.
 const INTRO_KEY = 'outfit-picker:intro';
 const root = document.getElementById('app');
+// Where render() draws the current screen, above the version line.
+let screenRoot = root;
 
 // No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
 document.addEventListener('gesturestart', (event) => event.preventDefault());
@@ -542,25 +545,24 @@ async function onSignIn() {
 
 function renderSignIn() {
   const remembered = storage.getItem(ACCOUNT_KEY);
-  append(root, h('section', { class: 'signin' },
+  append(screenRoot, h('section', { class: 'signin' },
     h('h1', {}, displayName()),
     h('p', { class: 'lead' }, 'Outfit ideas from the clothes in your OneDrive.'),
     state.signinNote && h('p', { class: 'hint', role: 'status' }, state.signinNote),
     h('button', { class: 'primary', disabled: !isConfigured(), onclick: onSignIn },
       remembered ? `Continue as ${remembered}` : 'Sign in with Microsoft'),
     !isConfigured() && h('p', { class: 'hint' }, 'Add your Microsoft app ID in js/config.js (see README).'),
-    h('button', { class: 'secondary', onclick: enterSample }, 'Try with sample clothes')),
-  h('footer', { class: 'version' }, VERSION_LINE));
+    h('button', { class: 'secondary', onclick: enterSample }, 'Try with sample clothes')));
 }
 
 function renderLoading() {
-  append(root, h('section', { class: 'signin' },
+  append(screenRoot, h('section', { class: 'signin' },
     h('h1', {}, displayName()),
     h('p', { class: 'lead', role: 'status' }, 'Loading your wardrobe…')));
 }
 
 function renderError() {
-  append(root, h('section', { class: 'signin' },
+  append(screenRoot, h('section', { class: 'signin' },
     h('h1', {}, displayName()),
     h('p', { class: 'lead', role: 'alert' },
       state.error.offline ? "You're offline. Connect to load your wardrobe." : "Couldn't reach OneDrive."),
@@ -574,7 +576,7 @@ function takeZoomOpening() {
 }
 
 function renderHomeScreen() {
-  renderHome(root, {
+  renderHome(screenRoot, {
     settings: state.data.settings,
     zoomed: state.zoomed,
     zoomOpening: takeZoomOpening(),
@@ -605,7 +607,7 @@ function renderLabelScreen() {
     render();
     return;
   }
-  renderLabel(root, {
+  renderLabel(screenRoot, {
     item: { id, ...state.data.items[id] },
     photoUrl: state.source.photoUrl(id),
     mode: state.label.mode,
@@ -618,7 +620,7 @@ function renderLabelScreen() {
 }
 
 function renderWardrobeScreen() {
-  renderWardrobe(root, {
+  renderWardrobe(screenRoot, {
     items: allItems(state.data),
     photoUrl: (id) => state.source.photoUrl(id),
     canRefresh: state.source.mode === 'onedrive',
@@ -655,7 +657,14 @@ function render() {
   // A tap inside the big outfit redraws it: keep it scrolled where it was.
   const zoomScroll = root.querySelector('.zoom-panel')?.scrollTop ?? 0;
   clear(root);
+  const content = h('div', { class: 'screen' });
+  root.append(content);
+  screenRoot = content;
   SCREENS[state.screen]();
+  if (screenRoot !== content) return; // the screen changed and was drawn again (renderLabelScreen)
+  // The version line, at the bottom of every screen; on the home screen it hides devil mode
+  // and the secret card (ui/eggs.js).
+  root.append(state.screen === 'home' ? versionLine(homeActions) : h('footer', { class: 'version' }, VERSION_LINE));
   const panel = root.querySelector('.zoom-panel');
   if (panel) panel.scrollTop = zoomScroll;
   // The page behind the big outfit stays still.
