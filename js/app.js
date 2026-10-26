@@ -12,6 +12,7 @@ import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
+import { glideTitle, spotOf } from './ui/glide.js';
 import { renderHome } from './ui/home.js';
 import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
@@ -308,10 +309,11 @@ const homeActions = {
 };
 
 // The first time she opens the app on her birthday each year: confetti and a card.
+// Called once the name has glided into place, and only if she's still on the home screen.
 function birthdaySurprise() {
   const today = todayISO();
   const year = today.slice(0, 4);
-  if (!isBirthday(today) || storage.getItem(BIRTHDAY_KEY) === year) return;
+  if (state.screen !== 'home' || !isBirthday(today) || storage.getItem(BIRTHDAY_KEY) === year) return;
   storage.setItem(BIRTHDAY_KEY, year);
   state.birthdayOpen = true;
   render();
@@ -482,7 +484,7 @@ async function openWardrobeData(source) {
   });
   recompute();
   show('home');
-  birthdaySurprise();
+  setTimeout(birthdaySurprise, 700); // redrawing the screen sooner would cut the name's glide short
 }
 
 async function enterSample() {
@@ -659,14 +661,17 @@ function render() {
 }
 
 // Switches screens. A new screen fades in; showing the same one again (the next piece to
-// label) doesn't, and neither do taps that only redraw the screen (render).
+// label) doesn't, and neither do taps that only redraw the screen (render). From the opening
+// screen (sign-in or loading) to the home screen, the name glides up to its place instead.
 function show(screen) {
   const isNew = screen !== state.screen;
+  const openingTitle = isNew && screen === 'home' && root.querySelector('.signin h1');
+  const from = openingTitle && spotOf(openingTitle);
   if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null, secretOpen: false, birthdayOpen: false });
   state.screen = screen;
   render();
   window.scrollTo(0, 0);
-  if (isNew) fadeIn();
+  if (isNew && !(from && glideTitle(root, from))) fadeIn();
 }
 
 function fadeIn() {

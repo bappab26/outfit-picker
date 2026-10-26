@@ -78,6 +78,10 @@ and a French interface (the interface is English).
 - The app's name at the top, "lil evil wardrobe" until she renames it: tapping the name
   (with its ✎) opens a box to type a new one. It is saved with her data and also shows in
   the browser tab. An empty name goes back to "lil evil wardrobe".
+- Coming from the opening screen (sign-in or "Loading your wardrobe…", where the name is
+  big, on the left, halfway down), the name glides up to its place at the top and shrinks as
+  it goes (0.6 s), and the rest of the home screen fades in under it. Other screens just fade
+  in. When the phone asks for less motion, there is no glide.
 - **Occasion** choice at the top: Everyday · Work · Evening out · Special event.
 - **Temperature** choice: Cold · Mild · Hot. (There is no weather lookup. This tap decides
   sweater-and-coat versus t-shirt.)
@@ -428,6 +432,7 @@ js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
 js/ui/eggs.js            The hidden bits of the home screen
 js/ui/party.js           Short messages and confetti
+js/ui/glide.js           The name gliding in from the opening screen
 tests/*.test.js          Automated checks
 package.json             Only so `node --test` can run; no dependencies
 README.md                Setup guide

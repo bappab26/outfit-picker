@@ -93,7 +93,8 @@ button.link {
   background: none;
   text-align: left;
 }
-.app-name h1 { position: relative; overflow-wrap: anywhere; }
+/* transform-origin: the name glides in from the opening screen, scaling from its corner (ui/glide.js). */
+.app-name h1 { position: relative; overflow-wrap: anywhere; transform-origin: 0 0; }
 .pencil { color: var(--muted); font-size: 18px; }
 .rename { display: flex; flex: 1; gap: 8px; min-width: 0; }
 .rename button { padding: 0 12px; }
