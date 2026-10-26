@@ -81,11 +81,15 @@ and a French interface (the interface is English).
 - Coming from the opening screen (sign-in or "Loading your wardrobe…", where the name is
   36 px, on the left, halfway down), the name moves up to its place at the top (22 px) with
   one of 7 animations, picked at random and never the same twice in a row (the phone
-  remembers the last one): **glide**; **bounce** (past its place, then bounces down into
-  it); **loop** (a loop-the-loop on the way up); **spin** (a full turn); **swing** (swings
-  like a hanging sign once there); **pop** (shrinks away, pops back in at the top); **jelly**
-  (squishes and wobbles as it lands). Each takes 0.6 to 1.3 s and keeps the name on screen;
-  the rest of the home screen fades in under it. Other screens just fade in. When the phone
+  remembers the last one): **glide** (swoops out to the right, flies a little past its place,
+  settles); **bounce** (hits the top with a squash and bounces down off it, three times,
+  smaller each time); **loop** (shrinks a little and does a big loop-the-loop down and around
+  where it was, turning all the way around with it, then flies up); **spin** (two full turns
+  on the way up, then a wobble); **swing** (arrives a little low and swings like a hanging
+  sign, wide at first, rising into place); **pop** (shrinks away, pops back in at the top
+  40% bigger with a wiggle); **jelly** (lands with a big squish and wobbles). Each takes 1 to
+  1.7 s and keeps the whole name on screen, even on an iPhone SE; the rest of the home
+  screen fades in under it. Other screens just fade in. When the phone
   asks for less motion, there is no animation.
 - **Occasion** choice at the top: Everyday · Work · Evening out · Special event.
 - **Temperature** choice: Cold · Mild · Hot. (There is no weather lookup. This tap decides

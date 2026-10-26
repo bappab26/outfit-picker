@@ -7,7 +7,7 @@ export const EGGS = {
   // last; a countdown shows from the countdownFrom-th tap.
   devilTaps: 6,
   countdownFrom: 4,
-  tapGapMs: 1500,
+  tapGapMs: 1000,
   // Holding the version line this long opens the secret card.
   holdMs: 800,
   // The chance that an outfit card is a rare find.
