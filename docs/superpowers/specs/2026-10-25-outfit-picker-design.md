@@ -425,7 +425,8 @@ Microsoft names this folder after the app registration).
 index.html               Page shell, loads js/app.js
 manifest.webmanifest     Home-screen name and icons
 sw.js                    Caches the app's own files
-icons/                   App icons
+icons/                   App icons: Hello Kitty as a sticker on the theme color
+scripts/make-icons.mjs   Draws the icons from scripts/logo-source.png
 css/app.css              Styles (phone first)
 js/config.js             Microsoft app ID, folder names, redirect address
 js/settings.js           All rule numbers from section 3

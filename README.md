@@ -246,6 +246,26 @@ node -e "console.log(Buffer.from('Your new note', 'utf8').toString('base64'))"
 
 Everything here is public in the code, so keep names and years out of it.
 
+## Change the app icon
+
+The icons in `icons/` are drawn from `scripts/logo-source.png` (Hello Kitty): the script cuts
+her out of the white background, adds a white sticker edge and puts her on the app's violet.
+To use another picture, save it as `scripts/logo-source.png` (a PNG with a plain white
+background) and run:
+
+```
+node scripts/make-icons.mjs
+```
+
+Then upload the three files in `icons/` and raise the version as in "Put it online". A phone
+keeps the icon it had when the app was added to its home screen: on an iPhone, remove the
+app from the home screen and add it again from Safari to see the new one; Android updates it
+by itself within a day or so.
+
+Hello Kitty belongs to Sanrio. Using her here is fine for a private gift, but the GitHub
+repository and the site are public, so don't share the link around or use it for anything
+else.
+
 ## Adjust the rules
 
 Every number the rules use is in `js/settings.js`, with a note on what it does. For
