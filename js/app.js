@@ -633,6 +633,9 @@ function renderWardrobeScreen() {
   }, wardrobeActions);
 }
 
+// The opening screens stay clean: just the name and what to do.
+const NO_VERSION_LINE = ['signin', 'loading', 'error'];
+
 const SCREENS = {
   signin: renderSignIn,
   loading: renderLoading,
@@ -662,9 +665,10 @@ function render() {
   screenRoot = content;
   SCREENS[state.screen]();
   if (screenRoot !== content) return; // the screen changed and was drawn again (renderLabelScreen)
-  // The version line, at the bottom of every screen; on the home screen it hides devil mode
-  // and the secret card (ui/eggs.js).
-  root.append(state.screen === 'home' ? versionLine(homeActions) : h('footer', { class: 'version' }, VERSION_LINE));
+  // The version line, at the bottom of every screen but the opening ones; on the home screen
+  // it hides devil mode and the secret card (ui/eggs.js).
+  if (state.screen === 'home') root.append(versionLine(homeActions));
+  else if (!NO_VERSION_LINE.includes(state.screen)) root.append(h('footer', { class: 'version' }, VERSION_LINE));
   const panel = root.querySelector('.zoom-panel');
   if (panel) panel.scrollTop = zoomScroll;
   // The page behind the big outfit stays still.

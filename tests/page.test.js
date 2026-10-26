@@ -38,7 +38,11 @@ test('the version number goes up with the service worker cache', () => {
   assert.equal(VERSION_NUMBER, `1.${cache}`);
 });
 
-test('the version line sits at the bottom of every screen', () => {
+test('the opening screens (sign-in, loading, error) have no version line', () => {
+  assert.match(read('js/app.js'), /const NO_VERSION_LINE = \['signin', 'loading', 'error'\];/);
+});
+
+test('the version line sits at the bottom of the other screens', () => {
   const css = read('css/app.css');
   const app = css.match(/\n#app \{([^}]*)\}/)[1];
   for (const rule of ['display: flex;', 'flex-direction: column;', 'min-height: 100dvh;']) assert.ok(app.includes(rule), rule);

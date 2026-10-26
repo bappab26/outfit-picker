@@ -4,7 +4,7 @@
 export const DEFAULT_NAME = 'lil evil wardrobe';
 // This version's number and date: change both with every update (see README, "Put it online").
 // The number after "1." is the one in CACHE_NAME in sw.js.
-export const VERSION_NUMBER = '1.16';
+export const VERSION_NUMBER = '1.17';
 export const VERSION = '2026-10-25';
 export const VERSION_LINE = `Version ${VERSION_NUMBER} · ${VERSION} · by bap bap`;
 

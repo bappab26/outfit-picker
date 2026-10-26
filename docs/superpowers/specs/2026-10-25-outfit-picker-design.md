@@ -108,8 +108,9 @@ and a French interface (the interface is English).
   per row, its Not worn in a while tag, and the same 👍 / 👎 / Wore this buttons (👎 closes it
   and swaps the card). **×**, a tap on the dark area, or Esc closes it. The page behind stays still.
 - **Shuffle** replaces all 3 cards with 3 new ones.
-- At the bottom of every screen: "Version <number> · <date> · by bap bap", for example
-  "Version 1.16 · 2026-10-25 · by bap bap". The number after "1." goes up by one with every
+- At the bottom of every screen except the opening ones (sign-in, loading and error, kept
+  clean): "Version <number> · <date> · by bap bap", for example
+  "Version 1.17 · 2026-10-25 · by bap bap". The number after "1." goes up by one with every
   update (it is the number in `CACHE_NAME` in `sw.js`). The line sits at the bottom edge when
   the screen is short, and right after the content when it is long.
 - Zooming is turned off (no pinch or double-tap zoom).
