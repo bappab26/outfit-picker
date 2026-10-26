@@ -79,9 +79,14 @@ and a French interface (the interface is English).
   (with its ✎) opens a box to type a new one. It is saved with her data and also shows in
   the browser tab. An empty name goes back to "lil evil wardrobe".
 - Coming from the opening screen (sign-in or "Loading your wardrobe…", where the name is
-  big, on the left, halfway down), the name glides up to its place at the top and shrinks as
-  it goes (0.6 s), and the rest of the home screen fades in under it. Other screens just fade
-  in. When the phone asks for less motion, there is no glide.
+  36 px, on the left, halfway down), the name moves up to its place at the top (22 px) with
+  one of 7 animations, picked at random and never the same twice in a row (the phone
+  remembers the last one): **glide**; **bounce** (past its place, then bounces down into
+  it); **loop** (a loop-the-loop on the way up); **spin** (a full turn); **swing** (swings
+  like a hanging sign once there); **pop** (shrinks away, pops back in at the top); **jelly**
+  (squishes and wobbles as it lands). Each takes 0.6 to 1.3 s and keeps the name on screen;
+  the rest of the home screen fades in under it. Other screens just fade in. When the phone
+  asks for less motion, there is no animation.
 - **Occasion** choice at the top: Everyday · Work · Evening out · Special event.
 - **Temperature** choice: Cold · Mild · Hot. (There is no weather lookup. This tap decides
   sweater-and-coat versus t-shirt.)
@@ -432,7 +437,7 @@ js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
 js/ui/eggs.js            The hidden bits of the home screen
 js/ui/party.js           Short messages and confetti
-js/ui/glide.js           The name gliding in from the opening screen
+js/ui/intro.js           The name's 7 opening animations
 tests/*.test.js          Automated checks
 package.json             Only so `node --test` can run; no dependencies
 README.md                Setup guide

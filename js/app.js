@@ -12,8 +12,8 @@ import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
-import { glideTitle, spotOf } from './ui/glide.js';
 import { renderHome } from './ui/home.js';
+import { INTRO_MAX_MS, pickIntro, playIntro, spotOf } from './ui/intro.js';
 import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
 import { confetti, toast } from './ui/party.js';
@@ -31,6 +31,8 @@ const DEVIL_KEY = 'outfit-picker:devil';
 const KEPT_KEY = 'outfit-picker:kept';
 const BIRTHDAY_KEY = 'outfit-picker:birthday';
 const MEMORY_KEY = 'outfit-picker:memory-hidden';
+// The last opening animation (ui/intro.js), so the next one is different.
+const INTRO_KEY = 'outfit-picker:intro';
 const root = document.getElementById('app');
 
 // No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
@@ -309,7 +311,7 @@ const homeActions = {
 };
 
 // The first time she opens the app on her birthday each year: confetti and a card.
-// Called once the name has glided into place, and only if she's still on the home screen.
+// Called once the name's opening animation is over, and only if she's still on the home screen.
 function birthdaySurprise() {
   const today = todayISO();
   const year = today.slice(0, 4);
@@ -484,7 +486,7 @@ async function openWardrobeData(source) {
   });
   recompute();
   show('home');
-  setTimeout(birthdaySurprise, 700); // redrawing the screen sooner would cut the name's glide short
+  setTimeout(birthdaySurprise, INTRO_MAX_MS + 100); // redrawing the screen sooner would cut the name's animation short
 }
 
 async function enterSample() {
@@ -662,7 +664,7 @@ function render() {
 
 // Switches screens. A new screen fades in; showing the same one again (the next piece to
 // label) doesn't, and neither do taps that only redraw the screen (render). From the opening
-// screen (sign-in or loading) to the home screen, the name glides up to its place instead.
+// screen (sign-in or loading) to the home screen, the name moves up to its place instead.
 function show(screen) {
   const isNew = screen !== state.screen;
   const openingTitle = isNew && screen === 'home' && root.querySelector('.signin h1');
@@ -671,7 +673,15 @@ function show(screen) {
   state.screen = screen;
   render();
   window.scrollTo(0, 0);
-  if (isNew && !(from && glideTitle(root, from))) fadeIn();
+  if (isNew && !(from && openingAnimation(from))) fadeIn();
+}
+
+// One of the opening animations, a different one from last time. False if it can't play.
+function openingAnimation(from) {
+  const name = pickIntro(storage.getItem(INTRO_KEY));
+  if (!playIntro(root, from, name)) return false;
+  storage.setItem(INTRO_KEY, name);
+  return true;
 }
 
 function fadeIn() {

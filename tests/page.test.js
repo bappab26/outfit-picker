@@ -20,6 +20,10 @@ test('the page, the home-screen icon and the app start with the same name', () =
   assert.ok(read('index.html').includes(`<title>${DEFAULT_NAME}</title>`));
 });
 
+test('the name is bigger on the opening screen than on the home screen', () => {
+  assert.match(read('css/app.css'), /\.signin h1 \{ font-size: 36px; \}/);
+});
+
 test('the version is a date', () => {
   assert.match(VERSION, /^\d{4}-\d{2}-\d{2}$/);
 });
