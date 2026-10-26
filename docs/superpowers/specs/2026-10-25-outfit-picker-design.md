@@ -151,7 +151,8 @@ Little hidden surprises, none of which gets in the way of picking outfits. The r
   screen (where Delete is); **Keep it** hides the question. Either way that piece is never
   asked about again (remembered on the phone).
 - **Birthday (April 20):** the first time she opens the app that day each year, confetti falls
-  and a card says "Happy birthday! 🎂 Today every outfit is a 10." with a **Thank you!** button.
+  and a card in Vietnamese says "Chúc mừng sinh nhật! 🎂 Hôm nay bộ đồ nào cũng điểm 10."
+  ("Happy birthday! Today every outfit is a 10.") with a **Cảm ơn!** ("Thank you!") button.
 - **Late night:** from 2:00 to 4:59 a.m., a line under the name says "Go to sleep. Nobody's
   judging your outfit at this hour 😴".
 - **One year ago today:** when she wore an outfit on this day a year ago, a strip above the

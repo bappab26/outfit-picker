@@ -2,7 +2,7 @@
 // hold, the secret card, the birthday card, "One year ago today", late nights, rare cards and
 // the 👎 nudge.
 import { SWATCHES } from '../colors.js';
-import { BIRTHDAY_TEXT, EGGS, longDate, secretNote } from '../eggs.js';
+import { BIRTHDAY, EGGS, longDate, secretNote } from '../eggs.js';
 import { h, photo, swatch } from './dom.js';
 import { VERSION_LINE, colorLabel } from './labels.js';
 
@@ -65,10 +65,12 @@ export function secretCard(stats, view, actions) {
 }
 
 export function birthdayCard(actions) {
-  return overlay(h('div', { class: 'zoom-panel birthday', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Happy birthday' },
-    h('div', { class: 'party-face', 'aria-hidden': 'true' }, '🥳'),
-    h('p', { class: 'birthday-text' }, BIRTHDAY_TEXT),
-    h('button', { class: 'primary', onclick: actions.closeBirthday }, 'Thank you!')),
+  return overlay(h('div', {
+    class: 'zoom-panel birthday', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Chúc mừng sinh nhật', lang: BIRTHDAY.lang,
+  },
+  h('div', { class: 'party-face', 'aria-hidden': 'true' }, '🥳'),
+  h('p', { class: 'birthday-text' }, BIRTHDAY.text),
+  h('button', { class: 'primary', onclick: actions.closeBirthday }, BIRTHDAY.thanks)),
   actions.closeBirthday);
 }
 

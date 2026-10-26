@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isMilestone, isRare,
+  BIRTHDAY, EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isMilestone, isRare,
   lastMilestone, longDate, nudgePiece, oneYearAgo, scramble, secretNote, secretStats, unscramble,
 } from '../js/eggs.js';
 import { makeItem as m, outfitOf, blankData } from './helpers.js';
@@ -42,6 +42,12 @@ test('her birthday is April 20, any year', () => {
   assert.equal(isBirthday('2031-04-20'), true);
   assert.equal(isBirthday('2027-04-21'), false);
   assert.equal(isBirthday('2027-02-20'), false);
+});
+
+test('the birthday card is in Vietnamese', () => {
+  assert.equal(BIRTHDAY.lang, 'vi');
+  assert.match(BIRTHDAY.text, /^Chúc mừng sinh nhật!/);
+  assert.equal(BIRTHDAY.thanks, 'Cảm ơn!');
 });
 
 test('late night is from 2 a.m. until 5 a.m.', () => {

@@ -235,8 +235,8 @@ Hidden surprises for her to find (don't spoil them):
 - Her 10th, 50th, 100th Wore this (then every 100th): confetti.
 
 To change them, see the top of `js/eggs.js` (birthday date, chances, counts) and
-`BIRTHDAY_TEXT`. The secret note is stored scrambled; to write a new one, run this with your
-text, then paste what it prints into `NOTE` in `js/eggs.js`:
+`BIRTHDAY` (the birthday card, in Vietnamese). The secret note is stored scrambled; to write
+a new one, run this with your text, then paste what it prints into `NOTE` in `js/eggs.js`:
 
 ```
 node -e "console.log(Buffer.from('Your new note', 'utf8').toString('base64'))"

@@ -5,7 +5,7 @@
 export const EGGS = {
   // Taps on the version line that turn devil mode on or off, each at most tapGapMs after the
   // last; a countdown shows from the countdownFrom-th tap.
-  devilTaps: 6,
+  devilTaps: 7,
   countdownFrom: 4,
   tapGapMs: 1500,
   // Holding the version line this long opens the secret card.
@@ -17,10 +17,15 @@ export const EGGS = {
   // Her birthday, as MM-DD.
   birthday: '04-20',
   // "Go to sleep" shows from fromHour:00 until toHour:00.
-  lateNight: { fromHour: 1, toHour: 5 },
+  lateNight: { fromHour: 2, toHour: 5 },
 };
 
-export const BIRTHDAY_TEXT = 'Happy birthday! 🎂 Today every outfit is a 10.';
+// The birthday card, in Vietnamese: "Happy birthday! 🎂 Today every outfit is a 10." and "Thank you!".
+export const BIRTHDAY = {
+  lang: 'vi',
+  text: 'Chúc mừng sinh nhật! 🎂 Hôm nay bộ đồ nào cũng điểm 10.',
+  thanks: 'Cảm ơn!',
+};
 
 // The note on the secret card, scrambled so it can't be read at a glance or found by a search.
 const NOTE = 'QnVpbHQgd2l0aCBsb3ZlIGFuZCB6ZXJvIGZhc2hpb24gc2Vuc2UgYnkgYmFwIGJhcCDwn5ak';
