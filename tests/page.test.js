@@ -24,9 +24,23 @@ test('the name is bigger on the opening screen than on the home screen', () => {
   assert.match(read('css/app.css'), /\.signin h1 \{ font-size: 36px; \}/);
 });
 
-test('the version line shows the version number and bap bap, with no date', () => {
+test('the version line shows just the version number and bap bap', () => {
   assert.match(VERSION_NUMBER, /^1\.\d+$/);
-  assert.equal(VERSION_LINE, `Version ${VERSION_NUMBER} · by bap bap`);
+  assert.equal(VERSION_LINE, `${VERSION_NUMBER} · by bap bap`);
+});
+
+test('every screen has a leopard print behind it, with spots in each look\'s colors', () => {
+  const css = read('css/app.css');
+  const rule = (selector) => css.match(new RegExp(`(?:^|\\n)${selector.replace('.', '\\.')} \\{([^}]*)\\}`))[1];
+  const spots = (selector) => rule(selector).match(/--leopard: url\("data:image\/svg\+xml,([^"]+)"\)/)[1];
+  // The spots only: the background color shows through around them.
+  const looks = { ':root': ['%233b2259', '%23170824'], 'body.evil': ['%232e0b12', '%230f0204'], 'body.angel': ['%23ece0f8', '%23d9c6ee'] };
+  for (const [selector, colors] of Object.entries(looks)) {
+    for (const color of colors) assert.ok(spots(selector).includes(color), `${selector}: ${color}`);
+    assert.ok(!/rect/.test(spots(selector)), selector);
+  }
+  assert.match(rule('body'), /background: var\(--leopard\) 0 0 \/ 112px, var\(--bg\);/);
+  assert.match(rule('body.evil'), /no-repeat, var\(--leopard\) 0 0 \/ 112px, var\(--bg\);/, 'the red glow keeps the spots');
 });
 
 test('the version number goes up with the service worker cache', () => {
@@ -52,6 +66,13 @@ test('evil mode turns every screen blood red, the phone bars too', () => {
   for (const color of ['--bg: #1c0609;', '--surface: #3a0f17;', '--accent: #ff3355;']) assert.ok(evil.includes(color), color);
   // The phone's top bar takes --bg from the body (applyTheme in app.js).
   assert.match(read('js/app.js'), /getComputedStyle\(document\.body\)\.getPropertyValue\('--bg'\)/);
+});
+
+test('the outfit calendar sits on a plain panel, so the leopard print stays out of the way', () => {
+  const css = read('css/app.css');
+  assert.match(css, /\n\.calendar-box \{[^}]*background: var\(--surface\);/);
+  assert.match(css, /\n\.day\.worn \{ background: var\(--accent-soft\);/, 'worn days stand out from the panel');
+  assert.match(read('js/ui/worn.js'), /h\('section', \{ class: 'calendar-box' \}/);
 });
 
 test('the app, the phone bars, the splash screen and the icons share one background color', () => {
