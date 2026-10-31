@@ -58,8 +58,8 @@ export function secretCard(stats, view, actions) {
     stats.since && ['Wardrobe started', longDate(stats.since)],
   ].filter(Boolean);
   return overlay(h('div', { class: 'zoom-panel secret', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Secret' },
-    h('div', { class: 'zoom-top' }, h('h2', {}, '🤫 You found the secret'), closeButton(actions.closeSecret)),
-    h('p', { class: 'secret-note' }, secretNote()),
+    // bap bap's note is the card's title.
+    h('div', { class: 'zoom-top' }, h('h2', { class: 'secret-note' }, secretNote()), closeButton(actions.closeSecret)),
     h('dl', { class: 'secret-stats' }, rows.map(([label, value]) => [h('dt', {}, label), h('dd', {}, value)]))),
   actions.closeSecret);
 }
