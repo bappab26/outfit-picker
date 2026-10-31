@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SETTINGS } from '../js/settings.js';
-import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver, addPiece, removePieces, tidyNote } from '../js/store.js';
+import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver, addPiece, removePieces, tidyNote,
+  mergeWishlist, addToWishlist, wishlistToPiece, removeFromWishlist, updateWishlistItem } from '../js/store.js';
 
 const entry = (id, category = 'tops', fileName = `${id}.jpg`) => ({ id, category, fileName, thumbUrl: null });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -11,6 +12,7 @@ test('emptyData has the spec shape and defaults', () => {
     version: 1, items: {}, pairScores: {}, outfitPenalties: {}, diary: [],
     stats: { worn: 0, celebrated: 0 },
     settings: { occasion: 'everyday', temperature: 'mild', name: null },
+    wishlist: [],
   });
 });
 
@@ -217,4 +219,47 @@ test('removePieces drops the pieces with their pair scores and outfit penalties'
   assert.deepEqual(Object.keys(data.items), ['b', 'c']);
   assert.deepEqual(data.pairScores, { 'b|c': 2 });
   assert.deepEqual(data.outfitPenalties, {});
+});
+
+const wish = (id, extra = {}) => ({ id, fileName: `${id}.jpg`, category: 'tops', color: 'red', warmth: 'medium', style: 'smart', addedAt: '2026-10-31', ...extra });
+const wishData = (...items) => parseData(JSON.stringify({ version: 1, wishlist: items }));
+
+test('older data without a wishlist gets an empty one', () => {
+  assert.deepEqual(parseData('{"version":1}').wishlist, []);
+  assert.deepEqual(emptyData().wishlist, []);
+});
+
+test('the wishlist is read and checked like pieces', () => {
+  const data = wishData(
+    wish('w1'),
+    wish('w2', { category: 'hats' }), wish('w3', { color: 'teal' }), wish('w4', { style: 'fancy' }),
+    wish('w5', { warmth: 'hot' }), { ...wish('w6'), id: undefined }, 'not an object',
+    wish('w7', { addedAt: 'yesterday' }),
+  );
+  assert.deepEqual(data.wishlist, [wish('w1'), wish('w7', { addedAt: '2000-01-01' })]);
+});
+
+test('a wishlist photo gone from OneDrive drops its item', () => {
+  const data = wishData(wish('w1'), wish('w2'));
+  assert.equal(mergeWishlist(data, [{ id: 'w1', fileName: 'w1.jpg' }]), true);
+  assert.deepEqual(data.wishlist.map((w) => w.id), ['w1']);
+  assert.equal(mergeWishlist(data, [{ id: 'w1', fileName: 'w1.jpg' }]), false);
+});
+
+test('adding to, changing and removing from the wishlist', () => {
+  const data = emptyData();
+  addToWishlist(data, { id: 'w1', fileName: 'photo-1.jpg' }, { category: 'skirts', color: 'green', warmth: 'light', style: 'casual' }, '2026-10-31');
+  assert.deepEqual(data.wishlist, [{ id: 'w1', fileName: 'photo-1.jpg', category: 'skirts', color: 'green', warmth: 'light', style: 'casual', addedAt: '2026-10-31' }]);
+  updateWishlistItem(data, 'w1', { category: 'dresses', color: 'black', warmth: 'medium', style: 'dressy' });
+  assert.deepEqual(data.wishlist[0], { id: 'w1', fileName: 'photo-1.jpg', category: 'dresses', color: 'black', warmth: 'medium', style: 'dressy', addedAt: '2026-10-31' });
+  removeFromWishlist(data, 'w1');
+  assert.deepEqual(data.wishlist, []);
+});
+
+test('I bought it turns the item into a labeled piece', () => {
+  const data = wishData(wish('w1'));
+  wishlistToPiece(data, 'w1', 'photo (2).jpg', '2026-11-02');
+  assert.deepEqual(data.items.w1, { category: 'tops', fileName: 'photo (2).jpg', color: 'red', warmth: 'medium', style: 'smart', addedAt: '2026-11-02', lastWorn: null, wearCount: 0 });
+  assert.deepEqual(data.wishlist, []);
+  assert.deepEqual(labeledItems(data).map((i) => i.id), ['w1'], 'ready for outfits, no labeling');
 });

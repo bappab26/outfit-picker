@@ -22,6 +22,8 @@ export function emptyData() {
     stats: { worn: 0, celebrated: 0 },
     // name: what she calls the app; null shows the default name.
     settings: { occasion: 'everyday', temperature: 'mild', name: null },
+    // Pieces she might buy (shop check), oldest first. Their photos are in OneDrive's Wishlist folder.
+    wishlist: [],
   };
 }
 
@@ -77,6 +79,24 @@ function diaryLines(raw) {
     .map(({ date, kind, occasion, ids }) => ({ date, kind, occasion, ids: [...ids] })));
 }
 
+// Keeps the wishlist items that make sense: an id and every label (spec
+// 2026-10-31-shop-check-wishlist-design.md, §4).
+function wishlistItems(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((w) => isObject(w) && typeof w.id === 'string' && w.id !== '' && CATEGORIES.includes(w.category)
+      && COLORS.includes(w.color) && WARMTHS.includes(w.warmth) && STYLES.includes(w.style))
+    .map((w) => ({
+      id: w.id,
+      fileName: typeof w.fileName === 'string' ? w.fileName : '',
+      category: w.category,
+      color: w.color,
+      warmth: w.warmth,
+      style: w.style,
+      addedAt: isDate(w.addedAt) ? w.addedAt : '2000-01-01',
+    }));
+}
+
 // Her Wore this count from the diary, for data saved before the app counted them. Milestones
 // already passed count as celebrated, so updating the app doesn't throw a surprise party.
 export function statsFromDiary(diary) {
@@ -129,6 +149,7 @@ export function parseData(text) {
   data.pairScores = numbersOnly(raw.pairScores);
   data.outfitPenalties = numbersOnly(raw.outfitPenalties);
   data.diary = diaryLines(raw.diary);
+  data.wishlist = wishlistItems(raw.wishlist);
   const stats = isObject(raw.stats) ? raw.stats : {};
   data.stats = isCount(stats.worn) && isCount(stats.celebrated)
     ? { worn: stats.worn, celebrated: stats.celebrated }
@@ -186,6 +207,37 @@ export function mergeListing(data, listing, today) {
     removePieces(data, gone);
   }
   return { newIds, changed };
+}
+
+// Drops wishlist items whose photo is no longer in OneDrive's Wishlist folder. True if any went.
+export function mergeWishlist(data, listing) {
+  const listed = new Set(listing.map((entry) => entry.id));
+  const before = data.wishlist.length;
+  data.wishlist = data.wishlist.filter((w) => listed.has(w.id));
+  return data.wishlist.length !== before;
+}
+
+export function addToWishlist(data, { id, fileName }, { category, color, warmth, style }, today) {
+  data.wishlist.push({ id, fileName, category, color, warmth, style, addedAt: today });
+}
+
+export function updateWishlistItem(data, id, { category, color, warmth, style }) {
+  const item = data.wishlist.find((w) => w.id === id);
+  if (item) Object.assign(item, { category, color, warmth, style });
+}
+
+export function removeFromWishlist(data, id) {
+  data.wishlist = data.wishlist.filter((w) => w.id !== id);
+}
+
+// I bought it: the wishlist item becomes a labeled piece. Its photo is now in a Wardrobe folder,
+// named `fileName`.
+export function wishlistToPiece(data, id, fileName, today) {
+  const item = data.wishlist.find((w) => w.id === id);
+  if (!item) return;
+  const { category, color, warmth, style } = item;
+  data.items[id] = { category, fileName, color, warmth, style, addedAt: today, lastWorn: null, wearCount: 0 };
+  removeFromWishlist(data, id);
 }
 
 const isLabeled = (item) => Boolean(item.color && item.warmth && item.style);
