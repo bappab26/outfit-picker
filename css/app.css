@@ -400,7 +400,7 @@ label.chip:focus-within { outline: 3px solid var(--accent); outline-offset: 2px;
 
 /* ----- Easter eggs (eggs.js, ui/eggs.js, ui/party.js) ----- */
 
-/* The version line counts taps and opens the secret card when held: no text selection or phone menu. */
+/* The version line counts quick taps: no text selection or phone menu. */
 .secret-line { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 /* Evil mode: every screen blood red (photo tiles stay light), a red glow at the top and two
@@ -510,16 +510,8 @@ body.angel .zoom { background: rgba(60, 30, 90, 0.45); }
 .nudge p { margin: 0 0 6px; }
 .nudge-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
-/* The secret card and the birthday card */
-.zoom-panel.secret, .zoom-panel.birthday { max-width: 400px; }
-.secret h2 { margin: 0; font-size: 18px; }
-/* The note is the title: on two lines on a phone, so the × stays at the top beside it. */
-.secret .zoom-top { align-items: flex-start; margin-bottom: 14px; }
-.secret-note { font-style: italic; line-height: 1.3; }
-.secret-stats { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px 14px; margin: 0; }
-.secret-stats dt { font-size: 14px; color: var(--muted); }
-.secret-stats dd { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; }
-.secret-photo { flex: none; width: 52px; }
+/* The birthday card */
+.zoom-panel.birthday { max-width: 400px; }
 .birthday { padding: 20px 16px; text-align: center; }
 .party-face { font-size: 64px; line-height: 1.2; }
 .birthday-text { margin: 8px 0 18px; font-size: 20px; font-weight: 600; }

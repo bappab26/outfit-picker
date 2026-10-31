@@ -13,11 +13,12 @@ test('the page turns off zooming', () => {
 });
 
 test('the page, the home-screen icon and the app start with the same name', () => {
-  assert.equal(DEFAULT_NAME, 'lil evil wardrobe');
+  assert.equal(DEFAULT_NAME, 'lil evil');
   const manifest = JSON.parse(read('manifest.webmanifest'));
   assert.equal(manifest.name, DEFAULT_NAME);
   assert.equal(manifest.short_name, DEFAULT_NAME);
   assert.ok(read('index.html').includes(`<title>${DEFAULT_NAME}</title>`));
+  assert.ok(read('index.html').includes(`<meta name="apple-mobile-web-app-title" content="${DEFAULT_NAME}">`), 'iPhone home-screen title');
 });
 
 test('the name is bigger on the opening screen than on the home screen', () => {

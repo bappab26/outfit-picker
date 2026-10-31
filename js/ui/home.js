@@ -1,9 +1,9 @@
 // Home screen: the app's name, occasion and temperature choices, then 3 outfit cards (spec §2).
 // Tapping a piece's photo shows that piece big, on its own, over the screen.
-// The hidden bits (evil mode, the secret card…) come from ui/eggs.js.
+// The hidden bits (evil mode, the birthday card…) come from ui/eggs.js.
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
 import { append, bigOutfit, choices, h, photo, tapAttrs } from './dom.js';
-import { birthdayCard, lateNightLine, memoryStrip, nudgeBox, rareTag, secretCard } from './eggs.js';
+import { birthdayCard, lateNightLine, memoryStrip, nudgeBox, rareTag } from './eggs.js';
 import { OCCASION_LABELS, TEMPERATURE_LABELS } from './labels.js';
 
 const NOTE_TEXT = {
@@ -127,6 +127,5 @@ export function renderHome(root, view, actions) {
     );
   }
   append(root,
-    view.secret && secretCard(view.secret, view, actions),
     view.birthday && birthdayCard(actions));
 }

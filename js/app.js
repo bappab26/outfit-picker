@@ -2,7 +2,7 @@
 import { accountName, getToken, initAuth, isConfigured, isLibraryLoaded, signIn } from './auth.js';
 import { detectImageColor } from './colors.js';
 import { todayISO } from './dates.js';
-import { EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isRare, nudgePiece, oneYearAgo, secretStats } from './eggs.js';
+import { EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isRare, nudgePiece, oneYearAgo } from './eggs.js';
 import { classifyError } from './errors.js';
 import { dislike, like, woreThis } from './feedback.js';
 import { learnHabits, styleSummary } from './habits.js';
@@ -46,13 +46,12 @@ let screenRoot = root;
 // No pinch zoom: iPhones ignore the page's zoom setting, so the gesture itself is stopped.
 document.addEventListener('gesturestart', (event) => event.preventDefault());
 
-// Esc closes the big outfit, the secret card or the birthday card (on a computer).
+// Esc closes the big outfit or the birthday card (on a computer).
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') return;
   if (state.screen === 'worn' && state.worn.zoomed !== null) calendarActions.closeZoom();
   if (state.screen !== 'home') return;
-  if (state.secretOpen) homeActions.closeSecret();
-  else if (state.birthdayOpen) homeActions.closeBirthday();
+  if (state.birthdayOpen) homeActions.closeBirthday();
   else if (state.zoomed !== null) homeActions.closeZoom();
 });
 
@@ -99,10 +98,9 @@ const state = {
   // shown big (its index), or null.
   worn: { month: null, day: null, zoomed: null },
   // Easter eggs: evil mode, the quick taps on the version line so far, and whether the
-  // secret card or the birthday card is open.
+  // birthday card is open.
   evil: storage.getItem(EVIL_KEY) === 'on',
   taps: null,
-  secretOpen: false,
   birthdayOpen: false,
 };
 
@@ -292,14 +290,6 @@ const homeActions = {
     if (state.evil) storage.setItem(EVIL_KEY, 'on');
     else storage.removeItem(EVIL_KEY);
     toast(state.evil ? 'Evil mode on 😈' : 'Evil mode off');
-    render();
-  },
-  openSecret() {
-    state.secretOpen = true;
-    render();
-  },
-  closeSecret() {
-    state.secretOpen = false;
     render();
   },
   closeBirthday() {
@@ -649,7 +639,6 @@ function renderHomeScreen() {
     canAdd: state.source.canAdd,
     lateNight: isLateNight(new Date()),
     memory: memoryIds(),
-    secret: state.secretOpen ? secretStats(state.data) : null,
     birthday: state.birthdayOpen,
   }, homeActions);
 }
@@ -754,7 +743,7 @@ function render() {
   SCREENS[state.screen]();
   if (screenRoot !== content) return; // the screen changed and was drawn again (renderLabelScreen)
   // The version line, at the bottom of every screen but the opening ones; on the home screen
-  // it hides evil mode and the secret card (ui/eggs.js).
+  // its quick taps turn evil mode on and off (ui/eggs.js).
   if (state.screen === 'home') root.append(versionLine(homeActions));
   else if (!NO_VERSION_LINE.includes(state.screen)) root.append(h('footer', { class: 'version' }, VERSION_LINE));
   const panel = root.querySelector('.zoom-panel');
@@ -770,7 +759,7 @@ function show(screen) {
   const isNew = screen !== state.screen;
   const openingTitle = isNew && screen === 'home' && root.querySelector('.signin h1');
   const from = openingTitle && spotOf(openingTitle);
-  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null, secretOpen: false, birthdayOpen: false });
+  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null, birthdayOpen: false });
   state.screen = screen;
   render();
   window.scrollTo(0, 0);

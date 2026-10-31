@@ -1,7 +1,7 @@
-# lil evil wardrobe
+# lil evil
 
 A free phone web app that reads photos of clothes from OneDrive and suggests outfits
-with simple rules. No AI, no paid services. "lil evil wardrobe" is the starting name: she can
+with simple rules. No AI, no paid services. "lil evil" is the starting name: she can
 tap the name at the top of the app to call it whatever she likes.
 
 Her clothes go in 11 OneDrive folders. An outfit is a top (from **Tops**, **Hoodies** or
@@ -242,7 +242,6 @@ Hidden surprises for her to find (don't spoil them):
 
 - Tap the **… · by bap bap** line at the bottom of the home screen 6 times quickly: evil mode
   (every screen blood red, red leopard spots, horns on the name). 6 more taps turn it off.
-- Hold that line for about a second: a secret card with your note and her stats.
 - Rename the app with "angel" in the name: pastel colors and a halo.
 - About 1 outfit card in 150 is a **✨ Rare find**.
 - A piece she keeps turning down (in 5 👎 outfits, never liked or worn) gets
@@ -253,12 +252,7 @@ Hidden surprises for her to find (don't spoil them):
 - Her 10th, 50th, 100th Wore this (then every 100th): confetti.
 
 To change them, see the top of `js/eggs.js` (birthday date, chances, counts) and
-`BIRTHDAY` (the birthday card, in Vietnamese). The secret note is stored scrambled; to write
-a new one, run this with your text, then paste what it prints into `NOTE` in `js/eggs.js`:
-
-```
-node -e "console.log(Buffer.from('Your new note', 'utf8').toString('base64'))"
-```
+`BIRTHDAY` (the birthday card, in Vietnamese).
 
 Everything here is public in the code, so keep names and years out of it.
 

@@ -1,7 +1,7 @@
 // Words shown on screen for the app's values.
 
 // The app's name until she picks her own (also in index.html and manifest.webmanifest).
-export const DEFAULT_NAME = 'lil evil wardrobe';
+export const DEFAULT_NAME = 'lil evil';
 // This version's number: raise it with every update (see README, "Put it online"). The number
 // after "1." is the one in CACHE_NAME in sw.js.
 export const VERSION_NUMBER = '1.25';

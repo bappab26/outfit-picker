@@ -1,39 +1,16 @@
-// The hidden bits of the home screen (the rules are in eggs.js): the version line's taps and
-// hold, the secret card, the birthday card, "One year ago today", late nights, rare cards and
-// the 👎 nudge.
-import { SWATCHES } from '../colors.js';
-import { BIRTHDAY, EGGS, longDate, secretNote } from '../eggs.js';
-import { h, photo, swatch } from './dom.js';
-import { VERSION_LINE, colorLabel } from './labels.js';
+// The hidden bits of the home screen (the rules are in eggs.js): the version line's taps, the
+// birthday card, "One year ago today", late nights, rare cards and the 👎 nudge.
+import { BIRTHDAY } from '../eggs.js';
+import { h, photo } from './dom.js';
+import { VERSION_LINE } from './labels.js';
 
-// Taps count toward evil mode; holding it opens the secret card.
+// Quick taps on it count toward evil mode.
 export function versionLine(actions) {
-  let timer = null;
-  const stop = () => {
-    clearTimeout(timer);
-    timer = null;
-  };
-  const line = h('footer', { class: 'version secret-line' }, VERSION_LINE);
-  line.addEventListener('pointerdown', () => {
-    stop();
-    timer = setTimeout(() => {
-      timer = null;
-      actions.openSecret();
-    }, EGGS.holdMs);
-  });
-  line.addEventListener('pointerup', () => {
-    if (!timer) return; // held: the secret card is already open
-    stop();
-    actions.tapVersion();
-  });
-  line.addEventListener('pointercancel', stop);
-  line.addEventListener('pointerleave', stop);
-  line.addEventListener('contextmenu', (event) => event.preventDefault());
-  return line;
+  return h('footer', { class: 'version secret-line', onclick: actions.tapVersion }, VERSION_LINE);
 }
 
 // A card over the darkened screen, like the big outfit. A tap on the dark area closes it,
-// except right after it opened (the end of the hold that opened it).
+// except right after it opened (a tap already on its way).
 function overlay(panel, onClose) {
   const backdrop = h('div', { class: 'zoom opening' }, panel);
   const openedAt = Date.now();
@@ -45,23 +22,6 @@ function overlay(panel, onClose) {
 
 function closeButton(onClose) {
   return h('button', { class: 'icon zoom-close', 'aria-label': 'Close', onclick: onClose }, '×');
-}
-
-export function secretCard(stats, view, actions) {
-  const rows = [
-    ['Pieces', stats.pieces],
-    ['Outfits worn', stats.worn],
-    stats.mostWorn && ['Most worn', [
-      h('span', { class: 'secret-photo' }, photo(view.photoUrl(stats.mostWorn.id), view.fileName(stats.mostWorn.id))),
-      `${stats.mostWorn.count} time${stats.mostWorn.count === 1 ? '' : 's'}`]],
-    stats.favoriteColor && ['Favorite color', [swatch(SWATCHES[stats.favoriteColor]), colorLabel(stats.favoriteColor)]],
-    stats.since && ['Wardrobe started', longDate(stats.since)],
-  ].filter(Boolean);
-  return overlay(h('div', { class: 'zoom-panel secret', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Secret' },
-    // bap bap's note is the card's title.
-    h('div', { class: 'zoom-top' }, h('h2', { class: 'secret-note' }, secretNote()), closeButton(actions.closeSecret)),
-    h('dl', { class: 'secret-stats' }, rows.map(([label, value]) => [h('dt', {}, label), h('dd', {}, value)]))),
-  actions.closeSecret);
 }
 
 export function birthdayCard(actions) {

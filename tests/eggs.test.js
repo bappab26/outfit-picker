@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   BIRTHDAY, EGGS, celebrateMilestone, countTap, eggTheme, isBirthday, isLateNight, isMilestone, isRare,
-  lastMilestone, longDate, nudgePiece, oneYearAgo, scramble, secretNote, secretStats, unscramble,
+  lastMilestone, nudgePiece, oneYearAgo,
 } from '../js/eggs.js';
 import { makeItem as m, outfitOf, blankData } from './helpers.js';
 
@@ -112,30 +112,10 @@ test('each milestone is celebrated once, even after Undo and Wore this again', (
   assert.equal(celebrateMilestone(stats), null);
 });
 
-test('the secret card counts her pieces, wears, most-worn piece, favorite color and first day', () => {
-  const data = withItems(
-    { ...m('a', 'tops', { color: 'black', wearCount: 3 }), addedAt: '2026-10-25' },
-    { ...m('b', 'pants', { color: 'black', wearCount: 2 }), addedAt: '2026-10-20' },
-    { ...m('c', 'shoes', { color: 'red', wearCount: 4 }), addedAt: '2000-01-01' }, // day unknown
-  );
-  data.stats = { worn: 7, celebrated: 0 };
-  assert.deepEqual(secretStats(data), {
-    pieces: 3, worn: 7, mostWorn: { id: 'c', count: 4 }, favoriteColor: 'black', since: '2026-10-20',
-  });
-});
-
-test('the secret card leaves out what it cannot know yet', () => {
-  const data = withItems({ ...m('a', 'tops'), addedAt: '2000-01-01' });
-  assert.deepEqual(secretStats(data), { pieces: 1, worn: 0, mostWorn: null, favoriteColor: null, since: null });
-});
-
-test('dates on the secret card are written out', () => {
-  assert.equal(longDate('2026-10-25'), 'October 25, 2026');
-  assert.equal(longDate('2027-04-01'), 'April 1, 2027');
-});
-
-test('the secret note is scrambled in the code and reads back', () => {
-  assert.equal(unscramble(scramble('Hi 🖤 é')), 'Hi 🖤 é');
-  assert.equal(secretNote(), 'Built with zero fashion sense by bap bap 🖤');
-  assert.ok(!readFileSync(new URL('../js/eggs.js', import.meta.url), 'utf8').includes(secretNote()));
+test('holding the bottom line opens nothing: the secret card is gone, only the taps are left', () => {
+  const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+  assert.equal(EGGS.holdMs, undefined);
+  assert.ok(!/secretCard|pointerdown/.test(read('js/ui/eggs.js')), 'ui/eggs.js');
+  assert.ok(!/openSecret|secretStats/.test(read('js/app.js')), 'app.js');
+  assert.match(read('js/ui/eggs.js'), /onclick: actions.tapVersion/);
 });

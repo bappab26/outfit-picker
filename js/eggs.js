@@ -1,6 +1,5 @@
-// Little hidden surprises (spec §2, "Easter eggs"): evil mode and the angel look, the secret
-// card, rare cards, the 👎 nudge, her birthday, late nights, one year ago today and Wore this
-// milestones. The rules live here; ui/eggs.js and ui/party.js show them.
+// Little hidden surprises (spec §2, "Easter eggs"): evil mode and the angel look, rare cards,
+// the 👎 nudge, her birthday, late nights, one year ago today and Wore this milestones. The rules live here; ui/eggs.js and ui/party.js show them.
 
 export const EGGS = {
   // Taps on the version line that turn evil mode on or off, each at most tapGapMs after the
@@ -8,8 +7,6 @@ export const EGGS = {
   evilTaps: 6,
   countdownFrom: 4,
   tapGapMs: 1000,
-  // Holding the version line this long opens the secret card.
-  holdMs: 800,
   // The chance that an outfit card is a rare find.
   rareChance: 1 / 150,
   // Turned-down outfits a never-liked, never-worn piece is in before the app asks about it.
@@ -26,12 +23,6 @@ export const BIRTHDAY = {
   text: 'Chúc mừng sinh nhật! 🎂 Hôm nay bộ đồ nào cũng điểm 10.',
   thanks: 'Cảm ơn!',
 };
-
-// The note on the secret card, scrambled so it can't be read at a glance or found by a search.
-const NOTE = 'QnVpbHQgd2l0aCB6ZXJvIGZhc2hpb24gc2Vuc2UgYnkgYmFwIGJhcCDwn5ak';
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December'];
 
 // 'angel' when her name for the app has "angel" in it, else 'evil' in evil mode, else null.
 export function eggTheme(name, evil) {
@@ -96,37 +87,4 @@ export function celebrateMilestone(stats) {
   if (!isMilestone(stats.worn) || stats.worn <= stats.celebrated) return null;
   stats.celebrated = stats.worn;
   return stats.worn;
-}
-
-// What the secret card shows. Her favorite color is the one she wears most;
-// '2000-01-01' stands for a piece added on an unknown day (store.js).
-export function secretStats(data) {
-  const items = Object.entries(data.items);
-  let mostWorn = null;
-  const wornByColor = {};
-  for (const [id, item] of items) {
-    if (item.wearCount > (mostWorn?.count ?? 0)) mostWorn = { id, count: item.wearCount };
-    if (item.color && item.wearCount > 0) wornByColor[item.color] = (wornByColor[item.color] ?? 0) + item.wearCount;
-  }
-  const favoriteColor = Object.keys(wornByColor).sort((a, b) => wornByColor[b] - wornByColor[a])[0] ?? null;
-  const since = items.map(([, item]) => item.addedAt).filter((d) => d > '2000-01-01').sort()[0] ?? null;
-  return { pieces: items.length, worn: data.stats.worn, mostWorn, favoriteColor, since };
-}
-
-// '2026-10-25' → 'October 25, 2026'.
-export function longDate(iso) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${MONTHS[m - 1]} ${d}, ${y}`;
-}
-
-export function scramble(text) {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(text)));
-}
-
-export function unscramble(code) {
-  return new TextDecoder().decode(Uint8Array.from(atob(code), (c) => c.charCodeAt(0)));
-}
-
-export function secretNote() {
-  return unscramble(NOTE);
 }
