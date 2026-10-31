@@ -8,6 +8,8 @@ export const AUTHORITY = 'https://login.microsoftonline.com/common';
 export const SCOPES = ['Files.ReadWrite'];
 
 export const WARDROBE_FOLDER = 'Wardrobe';
+// Photos of pieces she might buy (shop check), next to Wardrobe.
+export const WISHLIST_FOLDER = 'Wishlist';
 export const DATA_FILE = 'data.json';
 
 // OneDrive subfolder name → piece type. The order is the wardrobe screen order.

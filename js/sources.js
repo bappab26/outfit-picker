@@ -1,10 +1,14 @@
 // Where the wardrobe comes from: the built-in sample (saved in the browser) or OneDrive.
 // Both give the app the same Source shape: load, refresh, photoUrl, bigPhotoUrl (a sharper
 // photo, for photos shown big), save, and movePiece and deletePiece; OneDrive can also
-// addPhotos (`canAdd`).
+// addPhotos (`canAdd`) and keep a wishlist (`canWishlist`: saveToWishlist, buyWishlistItem,
+// removeWishlistItem).
 import { classifyError } from './errors.js';
 import { drawItem, sampleData } from './sample.js';
-import { addPiece, isReadable, mergeListing, parseData, removePieces } from './store.js';
+import {
+  addPiece, addToWishlist, isReadable, mergeListing, mergeWishlist, parseData, removeFromWishlist, removePieces,
+  wishlistToPiece,
+} from './store.js';
 
 // Numbered so a sample saved by an older version (before the diary and the new folders) is replaced.
 const SAMPLE_KEY = 'outfit-picker:sample-3';
@@ -41,14 +45,15 @@ export function createOneDriveSource({ graph, detect, storage, today, photos }) 
   }
 
   async function sync(data) {
-    const listing = await graph.listWardrobe();
+    const [listing, wishlist] = await Promise.all([graph.listWardrobe(), graph.listWishlist()]);
     thumbs.clear();
     bigThumbs.clear();
-    for (const e of listing) {
+    for (const e of [...listing, ...wishlist]) {
       thumbs.set(e.id, e.thumbUrl);
       if (e.bigUrl) bigThumbs.set(e.id, e.bigUrl);
     }
-    const { newIds, changed } = mergeListing(data, listing, today);
+    const { newIds, changed: piecesChanged } = mergeListing(data, listing, today);
+    const changed = mergeWishlist(data, wishlist) || piecesChanged;
     const byId = new Map(listing.map((e) => [e.id, e]));
     await inBatches(newIds, DETECT_AT_ONCE, async (id) => {
       try {
@@ -118,6 +123,34 @@ export function createOneDriveSource({ graph, detect, storage, today, photos }) 
       }
       return { newIds, failed };
     },
+    canWishlist: true,
+    // A piece she might buy: its photo goes to the Wishlist folder, shrunk like added photos.
+    // Returns its id.
+    async saveToWishlist(data, file, labels) {
+      let blob = file;
+      try {
+        blob = await photos.shrink(file);
+      } catch {
+        /* a photo the browser can't read is sent as it is */
+      }
+      const entry = await graph.uploadToWishlist(photos.name(1), blob);
+      addToWishlist(data, entry, labels, today);
+      added.set(entry.id, photos.url(blob));
+      return entry.id;
+    },
+    // These three change OneDrive first, so nothing changes in the app if that fails.
+    // I bought it: the photo moves into its Wardrobe folder and becomes a labeled piece.
+    async buyWishlistItem(data, id) {
+      const item = data.wishlist.find((w) => w.id === id);
+      if (!item) return;
+      const { fileName } = await graph.movePhoto(id, item.category, item.fileName);
+      wishlistToPiece(data, id, fileName, today);
+    },
+    async removeWishlistItem(data, id) {
+      await graph.deletePhoto(id);
+      removeFromWishlist(data, id);
+      added.delete(id);
+    },
     // Both change OneDrive first, so the piece stays as it was if that fails.
     async movePiece(data, id, category) {
       const { fileName } = await graph.movePhoto(id, category, data.items[id].fileName);
@@ -153,8 +186,10 @@ export function createSampleSource({ storage, today }) {
     async save(text) {
       storage.setItem(SAMPLE_KEY, text);
     },
-    // Sample clothes are drawings, so there are no photos to add.
+    // Sample clothes are drawings, so there are no photos to add, and no wishlist (its photos
+    // live in OneDrive).
     canAdd: false,
+    canWishlist: false,
     async movePiece(data, id, category) {
       data.items[id].category = category;
     },

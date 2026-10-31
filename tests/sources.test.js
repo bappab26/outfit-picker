@@ -26,6 +26,15 @@ function fakeGraph({ stored = dataWithA() } = {}) {
     async ensureFolders() { g.calls.ensureFolders += 1; },
     async readData() { g.calls.readData += 1; return g.stored; },
     async listWardrobe() { return g.listing; },
+    // The Wishlist folder's photos, and the photos saved into it.
+    wishlist: [],
+    wishUploads: [],
+    async listWishlist() { return g.wishlist; },
+    async uploadToWishlist(fileName, blob) {
+      const n = g.wishUploads.length + 1;
+      g.wishUploads.push({ fileName, blob });
+      return { id: `wish${n}`, fileName, thumbUrl: null, bigUrl: null };
+    },
     async writeData(text, fileName = 'data.json') {
       if (g.failWrites) throw new Error('offline');
       g.files.push({ fileName, text });
@@ -252,6 +261,7 @@ test('sample mode can move and delete pieces but not add photos', async () => {
   const source = createSampleSource({ storage: fakeStorage(), today });
   const { data } = await source.load();
   assert.equal(source.canAdd, false);
+  assert.equal(source.canWishlist, false, 'the wishlist needs OneDrive');
   assert.equal(source.bigPhotoUrl('sample-01'), source.photoUrl('sample-01'), 'drawings are sharp at any size');
   await source.movePiece(data, 'sample-01', 'sweatshirts');
   assert.equal(data.items['sample-01'].category, 'sweatshirts');
@@ -268,4 +278,63 @@ test('addPhotos stops when she has to sign in again, instead of counting the pho
   const { data } = await source.load();
   graph.uploadPhoto = async () => { throw new NeedsSignIn(); };
   await assert.rejects(source.addPhotos(data, 'tops', [photo('one'), photo('two')]), NeedsSignIn);
+});
+
+const red = { category: 'tops', color: 'red', warmth: 'medium', style: 'smart' };
+const wishEntry = (id) => ({ id, fileName: `${id}.jpg`, thumbUrl: `https://thumbs.example/${id}`, bigUrl: `https://big.example/${id}` });
+
+test('loading drops wishlist items whose photo is gone, and shows the others', async () => {
+  const wish = (id) => ({ id, fileName: `${id}.jpg`, ...red, addedAt: '2026-10-20' });
+  const stored = JSON.stringify({ version: 1, items: { a: pieceA() }, wishlist: [wish('w1'), wish('w2')] });
+  const { graph, source } = setup({ stored });
+  graph.listing = [entry('a')];
+  graph.wishlist = [wishEntry('w1')];
+  const { data } = await source.load();
+  assert.deepEqual(data.wishlist.map((w) => w.id), ['w1']);
+  assert.deepEqual(JSON.parse(graph.writes.at(-1)).wishlist.map((w) => w.id), ['w1']);
+  assert.equal(source.photoUrl('w1'), 'https://thumbs.example/w1');
+  assert.equal(source.bigPhotoUrl('w1'), 'https://big.example/w1');
+});
+
+test('saveToWishlist shrinks, uploads and adds the item', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  assert.equal(source.canWishlist, true);
+  assert.equal(await source.saveToWishlist(data, photo('one'), red), 'wish1');
+  assert.equal(graph.wishUploads[0].fileName, 'photo-1.jpg');
+  assert.equal(await graph.wishUploads[0].blob.text(), 'shrunk one');
+  assert.deepEqual(data.wishlist, [{ id: 'wish1', fileName: 'photo-1.jpg', ...red, addedAt: today }]);
+  // OneDrive makes its preview a little later; until then the photo shows from the phone.
+  assert.equal(source.photoUrl('wish1'), 'local-url-1');
+});
+
+test('I bought it moves the photo into its Wardrobe folder as a labeled piece', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  await source.saveToWishlist(data, photo('one'), red);
+  await source.buyWishlistItem(data, 'wish1');
+  assert.deepEqual(graph.moves, [['wish1', 'tops', 'photo-1.jpg']]);
+  assert.equal(data.items.wish1.fileName, 'moved-photo-1.jpg');
+  assert.equal(data.items.wish1.style, 'smart');
+  assert.deepEqual(data.wishlist, []);
+});
+
+test('Remove deletes the photo and the item', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  await source.saveToWishlist(data, photo('one'), red);
+  await source.removeWishlistItem(data, 'wish1');
+  assert.deepEqual(graph.deletes, ['wish1']);
+  assert.deepEqual(data.wishlist, []);
+});
+
+test('a failed move or delete changes nothing', async () => {
+  const { graph, source } = setup();
+  const { data } = await source.load();
+  await source.saveToWishlist(data, photo('one'), red);
+  graph.failChanges = true;
+  await assert.rejects(source.buyWishlistItem(data, 'wish1'));
+  await assert.rejects(source.removeWishlistItem(data, 'wish1'));
+  assert.deepEqual(data.wishlist.map((w) => w.id), ['wish1']);
+  assert.equal(data.items.wish1, undefined);
 });
