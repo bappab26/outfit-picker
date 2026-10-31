@@ -62,14 +62,18 @@ There is no lint or build step.
   listed at the top of `app.js` and `sources.js`. `SAMPLE_KEY` has a number; raise it when
   the sample's data shape changes, so old saved samples get replaced.
 
-## Never push to `main`
+## Pushing to `main`
 
-Pushing to `main` deploys straight to GitHub Pages, i.e. to the friend's phone. Until the
-owner says otherwise (rule set 2026-10-27):
+Pushing to `main` deploys straight to GitHub Pages, i.e. to the friend's phone within a
+minute. Since 2026-10-30 the owner wants changes pushed straight to `main` (this replaces the
+2026-10-27 rule of branches and pull requests):
 
-- Work on a branch and push only the branch.
-- Never push, merge or force-push to `main`. The owner reviews and merges pull requests
-  themselves.
+- Before changing anything, pull the latest `main`: work also happens in cloud sessions and on
+  the GitHub website.
+- Push to `main` only after `npm test` passes.
+- Never force-push to `main`.
+- If a session can't push to `main` (some cloud sessions can only push their own branch), push
+  the branch and open a pull request for the owner to merge.
 
 ## Rules for changes
 
