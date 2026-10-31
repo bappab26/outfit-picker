@@ -194,7 +194,7 @@ const NO_HABITS = { colorPairs: {}, colors: {}, shape: {}, dressedUp: {} };
 // Spec §3.4: colors and taste per pair, the outfit's own penalty, freshness per piece, a little randomness,
 // and her habits (§3.6) from learnHabits(). Works out everything that depends only on pieces once,
 // so scoring each of 100,000+ candidates is just table lookups. Requires pieces[i].index === i.
-function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits = null, occasion }) {
+export function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits = null, occasion }) {
   const points = SETTINGS.habits.points;
   const learned = habits ?? NO_HABITS;
   const n = pieces.length;
@@ -260,7 +260,7 @@ function makeScorer(pieces, data, { today, boostForgotten = false, rng, habits =
   };
 }
 
-const withIndexes = (items) => items.map((item, index) => ({ ...item, index }));
+export const withIndexes = (items) => items.map((item, index) => ({ ...item, index }));
 
 export function scoreOutfit(outfit, data, options) {
   const pieces = withIndexes(outfit.items);

@@ -33,6 +33,9 @@ export const SETTINGS = {
     showAfter: 5,
     strongAt: 0.3,
   },
+  // Shop check: from `great` outfits a piece is "a great match", from `few` it "goes with a few
+  // things", from `little` it "only goes with a little"; below that it goes with nothing.
+  shop: { great: 10, few: 3, little: 1 },
   // How long to wait after a change before saving to OneDrive.
   saveDelayMs: 1000,
 };
