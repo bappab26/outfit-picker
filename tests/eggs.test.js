@@ -136,6 +136,6 @@ test('dates on the secret card are written out', () => {
 
 test('the secret note is scrambled in the code and reads back', () => {
   assert.equal(unscramble(scramble('Hi 🖤 é')), 'Hi 🖤 é');
-  assert.match(secretNote(), /bap bap/);
+  assert.equal(secretNote(), 'Built with zero fashion sense by bap bap 🖤');
   assert.ok(!readFileSync(new URL('../js/eggs.js', import.meta.url), 'utf8').includes(secretNote()));
 });
