@@ -879,8 +879,8 @@ const SCREENS = {
 };
 
 // Swiping right does what Back does (swipe.js), on the screens that have it, but never while a
-// big photo is open. The screen follows her finger, with the screen Back goes to (`to`) showing
-// behind it, and slides back if she lets go too soon.
+// big photo is open. The screen and the one Back goes to (`to`) move side by side with her
+// finger, like a phone's home screen pages.
 const BACKS = {
   label: { actions: labelActions, to: () => (state.label.mode === 'new' ? 'home' : 'wardrobe') },
   wardrobe: { actions: wardrobeActions, to: () => 'home' },
@@ -888,11 +888,10 @@ const BACKS = {
   stats: { actions: statsActions, to: () => 'wardrobe' },
   shop: { actions: shopActions, to: () => 'wardrobe' },
 };
-// How long a swipe she let go too soon takes to slide back (css/app.css).
-const SLIDE_BACK_MS = 200;
-// The screen behind during a swipe ({ layer, screen }), and the timer that takes it away.
+// How long the screens take to slide the rest of the way when she lets go (css/app.css).
+const SLIDE_MS = 200;
+// The screen Back goes to, during a swipe: { layer, screen }.
 let behind = null;
-let behindTimer = null;
 
 watchSwipes(root, {
   backAction() {
@@ -903,24 +902,34 @@ watchSwipes(root, {
   },
   width: () => root.clientWidth,
   drag(px) {
-    clearTimeout(behindTimer);
     behind ??= drawBehind(BACKS[state.screen].to());
-    root.classList.remove('swipe-return');
     document.body.classList.add('swiping');
-    root.style.transform = `translateX(${px}px)`;
+    slide(px);
     getSelection()?.removeAllRanges(); // a mouse drag would select text
   },
-  release(wentBack) {
-    root.style.transform = '';
-    if (wentBack) {
-      root.classList.remove('screen-in'); // the screen she went back to is already in view
-      endSwipe();
-    } else {
-      root.classList.add('swipe-return');
-      behindTimer = setTimeout(endSwipe, SLIDE_BACK_MS);
-    }
+  // Both slide the rest of the way, on to the screen behind or back into place. Then Back draws
+  // the screen behind in the app, right where it shows, and the layer goes.
+  release(back) {
+    document.body.classList.add('swipe-settling');
+    slide(back ? root.clientWidth : 0);
+    setTimeout(() => {
+      if (back) {
+        back();
+        root.classList.remove('screen-in'); // already in view: no fade
+      }
+      document.body.classList.remove('swiping', 'swipe-settling'); // first, so nothing slides
+      root.style.transform = '';
+      behind.layer.remove();
+      behind = null;
+    }, SLIDE_MS);
   },
 });
+
+// Moves the screen px to the right, and the one behind along with it, just to its left.
+function slide(px) {
+  root.style.transform = `translateX(${px}px)`;
+  behind.layer.style.transform = `translateX(${px - root.clientWidth}px)`;
+}
 
 // Draws `screen` as Back would show it, in a layer behind the app that can't be tapped.
 function drawBehind(screen) {
@@ -935,12 +944,6 @@ function drawBehind(screen) {
   Object.assign(state, saved);
   root.before(layer);
   return { layer, screen };
-}
-
-function endSwipe() {
-  behind?.layer.remove();
-  behind = null;
-  document.body.classList.remove('swiping');
 }
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.

@@ -45,15 +45,16 @@ body {
   #app.screen-in { animation: none; }
 }
 
-/* Swiping right to go back (app.js): the screen follows her finger over the one Back goes to
-   (.swipe-behind), nothing scrolls sideways or gets selected meanwhile, and it slides back if
-   she lets go too soon (in SLIDE_BACK_MS). */
+/* Swiping right to go back (app.js): the screen and the one Back goes to (.swipe-behind) move
+   side by side with her finger, over the still leopard print. Nothing scrolls sideways or gets
+   selected meanwhile. When she lets go, both slide the rest of the way (in SLIDE_MS), and
+   nothing can be tapped until they're done. */
 body.swiping { overflow-x: clip; -webkit-user-select: none; user-select: none; }
-body.swiping #app { background: inherit; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45); }
-#app.swipe-return { transition: transform 0.2s ease-out; }
-.swipe-behind { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+body.swipe-settling #app, body.swipe-settling .swipe-behind { transition: transform 0.2s ease-out; }
+body.swipe-settling #app { pointer-events: none; }
+.swipe-behind { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
-  #app.swipe-return { transition: none; }
+  body.swipe-settling #app, body.swipe-settling .swipe-behind { transition: none; }
 }
 
 /* At least as tall as the screen, so the version line can sit at the bottom (.version). The

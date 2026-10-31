@@ -14,7 +14,12 @@ function screen({ canGoBack = () => true } = {}) {
     backAction: () => (canGoBack() ? () => (seen.backs++, seen.order.push('back')) : null),
     width: () => 375,
     drag: (px) => seen.drags.push(px),
-    release: (wentBack) => (seen.releases.push(wentBack), seen.order.push('release')),
+    // Like the app: the screens slide the rest of the way, then Back runs.
+    release: (back) => {
+      seen.releases.push(Boolean(back));
+      seen.order.push('release');
+      back?.();
+    },
   });
   const fire = (type, x, y, t, extra = {}) => {
     const event = {
@@ -46,10 +51,10 @@ test('a swipe right past a third of the screen goes back, the screen following t
   assert.deepEqual(seen.releases, [true]);
 });
 
-test('going back, Back draws the screen she swiped to before the screen is put back in place', () => {
+test('going back, Back is handed over to run once the screens have slid the rest of the way', () => {
   const { seen, fire } = screen();
   swipe(fire, [[60, 302], [120, 305], [180, 306]]);
-  assert.deepEqual(seen.order, ['back', 'release']);
+  assert.deepEqual(seen.order, ['release', 'back']);
 });
 
 test('a short, slow swipe slides back into place without going back', () => {
