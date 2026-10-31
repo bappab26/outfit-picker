@@ -68,6 +68,13 @@ test('evil mode turns every screen blood red, the phone bars too', () => {
   assert.match(read('js/app.js'), /getComputedStyle\(document\.body\)\.getPropertyValue\('--bg'\)/);
 });
 
+test('the outfit calendar sits on a plain panel, so the leopard print stays out of the way', () => {
+  const css = read('css/app.css');
+  assert.match(css, /\n\.calendar-box \{[^}]*background: var\(--surface\);/);
+  assert.match(css, /\n\.day\.worn \{ background: var\(--accent-soft\);/, 'worn days stand out from the panel');
+  assert.match(read('js/ui/worn.js'), /h\('section', \{ class: 'calendar-box' \}/);
+});
+
 test('the app, the phone bars, the splash screen and the icons share one background color', () => {
   const bg = read('css/app.css').match(/--bg: (#[0-9a-f]{6})/i)[1].toLowerCase();
   assert.equal(bg, '#29133f');

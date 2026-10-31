@@ -70,13 +70,15 @@ export function renderWorn(root, view, actions) {
       h('button', { class: 'link', onclick: actions.back }, 'Back'),
       h('h1', {}, 'Outfit calendar'),
       h('span', { class: 'topbar-spacer' })),
-    h('div', { class: 'month-bar' },
-      h('button', { class: 'icon', 'aria-label': 'Previous month', disabled: !view.canGoBack, onclick: actions.prevMonth }, '‹'),
-      h('h2', {}, monthTitle(view.month)),
-      h('button', { class: 'icon', 'aria-label': 'Next month', disabled: !view.canGoForward, onclick: actions.nextMonth }, '›')),
-    h('div', { class: 'calendar' },
-      WEEKDAY_NAMES.map((name) => h('span', { class: 'weekday', 'aria-hidden': 'true' }, name[0])),
-      monthWeeks(view.month).flat().map((day) => dayButton(day, view, actions))),
+    // On a plain panel, so the leopard print behind the screen doesn't get in the way of the days.
+    h('section', { class: 'calendar-box' },
+      h('div', { class: 'month-bar' },
+        h('button', { class: 'icon', 'aria-label': 'Previous month', disabled: !view.canGoBack, onclick: actions.prevMonth }, '‹'),
+        h('h2', {}, monthTitle(view.month)),
+        h('button', { class: 'icon', 'aria-label': 'Next month', disabled: !view.canGoForward, onclick: actions.nextMonth }, '›')),
+      h('div', { class: 'calendar' },
+        WEEKDAY_NAMES.map((name) => h('span', { class: 'weekday', 'aria-hidden': 'true' }, name[0])),
+        monthWeeks(view.month).flat().map((day) => dayButton(day, view, actions)))),
     dayOutfits(view, actions),
     view.zoomed !== null && bigWorn(view, actions));
 }

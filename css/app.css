@@ -309,9 +309,17 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 .add-clothes { display: block; width: 100%; margin: 0 0 12px; }
 .calendar-link { display: block; width: 100%; }
 
-/* Outfit calendar (ui/worn.js). No gap between the days, so they're as wide as they can be
-   on a 320px screen (41px; 44px tall). */
-.month-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 8px; }
+/* Outfit calendar (ui/worn.js), on a plain panel over the leopard print. No gap between the
+   days and little padding, so they're as wide as they can be on a 320px screen (40px; 44px
+   tall). */
+.calendar-box {
+  margin-top: 12px;
+  padding: 6px 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.month-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 4px 6px; }
 .month-bar h2 { margin: 0; }
 .month-bar .icon { font-size: 26px; line-height: 1; }
 .month-bar .icon:disabled { opacity: 0.35; }
@@ -319,7 +327,7 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 .weekday { padding: 4px 0; font-size: 13px; color: var(--muted); }
 .day { position: relative; min-width: 0; padding: 0; border-color: transparent; border-radius: 10px; background: none; }
 .day:disabled { opacity: 0.35; }
-.day.worn { background: var(--surface); font-weight: 600; }
+.day.worn { background: var(--accent-soft); font-weight: 600; }
 .day.worn::after {
   content: '';
   position: absolute;
@@ -335,7 +343,7 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 .day[aria-pressed="true"]::after { background: var(--accent-text); }
 .worn-outfit h2 { font-size: 16px; margin: 0 0 8px; }
 .zoom-top h2 { margin: 0; font-size: 16px; }
-.calendar + .hint { margin-top: 16px; }
+.calendar-box + .hint { margin-top: 16px; }
 .add-box {
   margin: 0 0 12px;
   padding: 2px 14px 8px;

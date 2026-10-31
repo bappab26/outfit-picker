@@ -156,7 +156,9 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
   closes it.
 - It reads the diary's Wore this lines (§4.5), so nothing new is saved. The diary keeps her
   latest 800 Wore this, about two years. Undo on Wore this takes it off the calendar too.
-- On a 320px screen the days are 41px wide and 44px tall: seven 44px columns don't fit.
+- The month and its days sit on a plain panel (like the cards), so the leopard print doesn't
+  get in the way; days she wore something are a lighter violet on it.
+- On a 320px screen the days are 40px wide and 44px tall: seven 44px columns don't fit.
 
 ### Sample mode
 
