@@ -39,6 +39,16 @@ export function tidyName(raw) {
   return name || null;
 }
 
+// The longest note she can write on a piece.
+export const NOTE_MAX = 100;
+
+// Her note on a piece ("needs ironing"), tidied up; null when there is none.
+export function tidyNote(raw) {
+  if (typeof raw !== 'string') return null;
+  const note = raw.trim().slice(0, NOTE_MAX).trim();
+  return note || null;
+}
+
 // Drops the oldest lines beyond her latest diaryMax 👍 and 👎 and latest woreMax Wore this.
 // Changes `diary` in place.
 export function trimDiary(diary) {
@@ -111,6 +121,9 @@ export function parseData(text) {
         lastWorn: isDate(item.lastWorn) ? item.lastWorn : null,
         wearCount: Number.isInteger(item.wearCount) && item.wearCount >= 0 ? item.wearCount : 0,
       };
+      // Only pieces with a note have one.
+      const note = tidyNote(item.note);
+      if (note) data.items[id].note = note;
     }
   }
   data.pairScores = numbersOnly(raw.pairScores);

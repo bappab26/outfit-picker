@@ -1,8 +1,9 @@
-// Wardrobe screen: every piece, grouped by OneDrive folder (spec §2).
+// Wardrobe screen: every piece, grouped by OneDrive folder, with a search and other sorts (spec §2).
 import { SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
+import { SORTS, findPieces } from '../find.js';
 import { OCCASIONS } from '../rules.js';
-import { append, h, photo, swatch } from './dom.js';
+import { append, choices, h, photo, swatch } from './dom.js';
 import { colorLabel, MONTH_NAMES, OCCASION_LABELS, SHAPE_LABELS, STYLE_LABELS, WARMTH_LABELS } from './labels.js';
 
 const MONTHS = MONTH_NAMES.map((name) => name.slice(0, 3));
@@ -22,7 +23,8 @@ function tile(item, view, actions) {
       labeled
         ? [swatch(SWATCHES[item.color]), `${WARMTH_LABELS[item.warmth]} · ${STYLE_LABELS[item.style]}`]
         : h('strong', {}, 'Needs labels')),
-    h('span', { class: 'tile-sub' }, lastWornText(item.lastWorn)));
+    h('span', { class: 'tile-sub' }, lastWornText(item.lastWorn)),
+    item.note && h('span', { class: 'tile-note' }, item.note));
 }
 
 // "Your style so far" (spec §3.6): the habits learned from her choices, from styleSummary().
@@ -66,7 +68,51 @@ function addClothes(view, actions) {
     h('button', { class: 'link', onclick: actions.cancelAdding }, 'Cancel'));
 }
 
+const SORT_LABELS = { folder: 'Folder', worn: 'Most worn', never: 'Never worn', newest: 'Newest' };
+
+// The pieces that match `query`: by folder, or in one list for the other sorts.
+function pieceList(view, actions, query) {
+  const found = findPieces(view.items, { query, sort: view.sort });
+  let content;
+  if (!view.items.length) content = null;
+  else if (!found.length) {
+    content = h('p', { class: 'hint' }, query.trim() ? 'Nothing matches your search.' : 'Every piece has been worn at least once.');
+  } else if (view.sort !== 'folder') {
+    content = h('div', { class: 'tiles' }, found.map((item) => tile(item, view, actions)));
+  } else {
+    content = Object.entries(FOLDERS).map(([folder, category]) => {
+      const items = found.filter((i) => i.category === category);
+      if (!items.length) return null;
+      return h('section', {},
+        h('h2', {}, folder),
+        h('div', { class: 'tiles' }, items.map((item) => tile(item, view, actions))));
+    });
+  }
+  return h('div', { class: 'piece-list' }, content);
+}
+
+// Typing doesn't draw the screen again (the box would lose its place): it remembers the
+// search and swaps in the new list.
+function searchBox(view, onSearch) {
+  const input = h('input', {
+    class: 'name-input search-input', type: 'search', value: view.query, placeholder: 'Search: black, jeans, tight…',
+    'aria-label': 'Search your wardrobe', autocomplete: 'off', enterkeyhint: 'search',
+  });
+  input.addEventListener('input', () => onSearch(input.value));
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') input.blur();
+  });
+  return input;
+}
+
 export function renderWardrobe(root, view, actions) {
+  let list = pieceList(view, actions, view.query);
+  const search = (query) => {
+    actions.search(query);
+    const next = pieceList(view, actions, query);
+    list.replaceWith(next);
+    list = next;
+  };
   append(root,
     h('header', { class: 'topbar' },
       h('button', { class: 'link', onclick: actions.back }, 'Back'),
@@ -83,12 +129,10 @@ export function renderWardrobe(root, view, actions) {
       h('button', { onclick: actions.openCalendar }, '📅 Calendar'),
       h('button', { onclick: actions.openStats }, '📊 Stats')),
     view.style && styleBox(view.style),
-    Object.entries(FOLDERS).map(([folder, category]) => {
-      const items = view.items.filter((i) => i.category === category);
-      if (!items.length) return null;
-      return h('section', {},
-        h('h2', {}, folder),
-        h('div', { class: 'tiles' }, items.map((item) => tile(item, view, actions))));
-    }),
+    view.items.length > 0 && [
+      searchBox(view, search),
+      choices('Sort', SORTS, SORT_LABELS, view.sort, actions.setSort),
+    ],
+    list,
   );
 }

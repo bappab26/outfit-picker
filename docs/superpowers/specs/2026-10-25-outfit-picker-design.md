@@ -124,8 +124,17 @@ and a French interface (the interface is English).
 
 ### Wardrobe screen
 
-- A grid of all pieces, grouped by folder, each showing its color, labels and "last worn".
+- A grid of all pieces, grouped by folder, each showing its color, labels, "last worn" and
+  her note (in small italics, on one line).
+- **Search** (added later): a box finds pieces by color, type or folder, warmth, style or
+  note, in any case; every word must match the same piece ("black shoes"). Typing swaps the
+  list in place, so the box keeps its place. The rules are in `js/find.js`.
+- **Sort** (added later): **Folder** (the grouping above), **Most worn** (on a tie, the one
+  worn last first), **Never worn** (only pieces never worn, the ones waiting longest first)
+  and **Newest** (by the day added). The other sorts show one list without folders.
 - Tapping a piece opens the same labeling view so she can change warmth, style or color, and:
+  - **Note** (added later): a short note, like "needs ironing", up to 100 letters, saved as
+    she types.
   - **Folder:** pick another folder to move the photo there in OneDrive. Its id stays the
     same, so labels, wear history and diary lines stay. A name already taken in that folder
     becomes "name (2).jpg".
@@ -451,6 +460,7 @@ Microsoft names this folder after the app registration).
   `dresses`, `shoes`, `jackets`, `coats`.
 - `settings.name` is her name for the app (at most 40 letters), or `null` for the default.
 - `warmth` and `style` are `null` until she labels the piece.
+- `note` (her note on the piece, at most 100 letters) is only there when she wrote one.
 - IDs inside the keys of `pairScores` and `outfitPenalties` are sorted, so the same pair or
   outfit always gets the same key.
 - `diary` lists her taps oldest first (`kind` is `wore`, `like` or `dislike`): at most 500
@@ -482,6 +492,7 @@ js/photos.js             Shrink and name photos added from the app
 js/colors.js             Color list, color wheel, naming a pixel, detecting a photo's color
 js/rules.js              Build, filter, score and pick outfits
 js/feedback.js           Apply 👍, 👎 and Wore this to the data
+js/find.js               Search and sort for the Wardrobe screen
 js/habits.js             Learn her habits from the diary (section 3.6)
 js/eggs.js               Easter egg rules (section 2, Easter eggs)
 js/worn.js               What she wore each day, for the outfit calendar (section 2)
