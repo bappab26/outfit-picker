@@ -24,8 +24,9 @@
 
 * { box-sizing: border-box; }
 
-/* No double-tap zoom (pinch zoom is turned off in index.html and app.js). */
-html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+/* The browser only scrolls up and down: a sideways swipe goes back (js/swipe.js). No
+   double-tap zoom either (pinch zoom is turned off in index.html and app.js). */
+html { -webkit-text-size-adjust: 100%; touch-action: pan-y; }
 
 body {
   margin: 0;
@@ -42,6 +43,14 @@ body {
 #app.screen-in { animation: screen-in 0.3s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   #app.screen-in { animation: none; }
+}
+
+/* Swiping right to go back (app.js): the screen follows her finger, nothing scrolls sideways
+   or gets selected meanwhile, and it slides back if she lets go too soon. */
+body.swiping { overflow-x: clip; -webkit-user-select: none; user-select: none; }
+#app.swipe-return { transition: transform 0.2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  #app.swipe-return { transition: none; }
 }
 
 /* At least as tall as the screen, so the version line can sit at the bottom (.version). */

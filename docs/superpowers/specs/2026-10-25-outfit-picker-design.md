@@ -187,6 +187,17 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
   get in the way; days she wore something are a lighter violet on it.
 - On a 320px screen the days are 40px wide and 44px tall: seven 44px columns don't fit.
 
+### Going back (added later)
+
+- Every screen with a **Back** button (Wardrobe, labeling, the calendar, stats, shop check)
+  also goes back with a swipe to the right, starting anywhere on the screen. It does what Back
+  does. An app opened from the iPhone home screen has no swipe back of its own.
+- The screen follows her finger. Letting go a third of the way across, or with a quick flick,
+  goes back; otherwise the screen slides back into place.
+- Only sideways swipes count, so scrolling up and down is unchanged. A swipe that starts in a
+  text box, or while a big photo is open, does nothing. A mouse drag works too, for trying it
+  on a computer.
+
 ### Sample mode
 
 - The sign-in screen has a **Try with sample clothes** button.
@@ -503,6 +514,7 @@ js/eggs.js               Easter egg rules (section 2, Easter eggs)
 js/worn.js               What she wore each day, for the outfit calendar (section 2)
 js/stats.js              Her wardrobe in numbers, for the stats screen (section 2)
 js/shop.js               Shop check: the outfits a piece she might buy would make
+js/swipe.js              Swipe right to go back
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen
