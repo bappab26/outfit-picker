@@ -3,7 +3,7 @@
 import { COLORS, SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
 import { STYLES, WARMTHS } from '../rules.js';
-import { append, choices, h, photo, swatch } from './dom.js';
+import { append, choices, h, sharpPhoto, swatch } from './dom.js';
 import { STYLE_LABELS, WARMTH_LABELS, colorLabel, warmthHint } from './labels.js';
 
 // Piece type → its OneDrive folder name, in the Wardrobe screen's order.
@@ -40,7 +40,7 @@ export function renderLabel(root, view, actions) {
       h('button', { class: 'link', onclick: actions.back }, 'Back'),
       h('h1', {}, mode === 'new' ? `New piece (${view.remaining} left)` : 'Edit piece'),
       h('span', { class: 'topbar-spacer' })),
-    h('div', { class: 'label-photo' }, photo(view.photoUrl, item.fileName)),
+    h('div', { class: 'label-photo' }, sharpPhoto(view.photoUrl, view.bigPhotoUrl, item.fileName)),
     h('div', { class: 'group' },
       h('div', { class: 'group-label' }, 'Color'),
       h('button', { class: 'color-current', 'aria-expanded': String(!grid.hidden), onclick: toggleGrid },

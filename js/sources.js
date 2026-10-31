@@ -1,6 +1,7 @@
 // Where the wardrobe comes from: the built-in sample (saved in the browser) or OneDrive.
-// Both give the app the same Source shape: load, refresh, photoUrl, save, and
-// movePiece and deletePiece; OneDrive can also addPhotos (`canAdd`).
+// Both give the app the same Source shape: load, refresh, photoUrl, bigPhotoUrl (a sharper
+// photo, for photos shown big), save, and movePiece and deletePiece; OneDrive can also
+// addPhotos (`canAdd`).
 import { classifyError } from './errors.js';
 import { drawItem, sampleData } from './sample.js';
 import { addPiece, isReadable, mergeListing, parseData, removePieces } from './store.js';
@@ -20,6 +21,7 @@ async function inBatches(list, size, fn) {
 // color(blob) → its main color, url(blob) → an address to show it, name(n) → a file name.
 export function createOneDriveSource({ graph, detect, storage, today, photos }) {
   const thumbs = new Map();
+  const bigThumbs = new Map();
   // Photos added from this phone, shown from the phone until OneDrive has made a preview.
   const added = new Map();
 
@@ -41,7 +43,11 @@ export function createOneDriveSource({ graph, detect, storage, today, photos }) 
   async function sync(data) {
     const listing = await graph.listWardrobe();
     thumbs.clear();
-    for (const e of listing) thumbs.set(e.id, e.thumbUrl);
+    bigThumbs.clear();
+    for (const e of listing) {
+      thumbs.set(e.id, e.thumbUrl);
+      if (e.bigUrl) bigThumbs.set(e.id, e.bigUrl);
+    }
     const { newIds, changed } = mergeListing(data, listing, today);
     const byId = new Map(listing.map((e) => [e.id, e]));
     await inBatches(newIds, DETECT_AT_ONCE, async (id) => {
@@ -74,6 +80,9 @@ export function createOneDriveSource({ graph, detect, storage, today, photos }) 
     },
     photoUrl(id) {
       return thumbs.get(id) ?? added.get(id) ?? null;
+    },
+    bigPhotoUrl(id) {
+      return bigThumbs.get(id) ?? thumbs.get(id) ?? added.get(id) ?? null;
     },
     save,
     canAdd: true,
@@ -124,6 +133,10 @@ export function createOneDriveSource({ graph, detect, storage, today, photos }) 
 
 export function createSampleSource({ storage, today }) {
   let current = null;
+  const drawing = (id) => {
+    const item = current?.items[id];
+    return item ? drawItem(item.category, item.color) : null;
+  };
   return {
     mode: 'sample',
     async load() {
@@ -134,10 +147,9 @@ export function createSampleSource({ storage, today }) {
     async refresh() {
       return { newIds: [] };
     },
-    photoUrl(id) {
-      const item = current?.items[id];
-      return item ? drawItem(item.category, item.color) : null;
-    },
+    photoUrl: drawing,
+    // Drawings are sharp at any size.
+    bigPhotoUrl: drawing,
     async save(text) {
       storage.setItem(SAMPLE_KEY, text);
     },

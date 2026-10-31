@@ -79,7 +79,9 @@ export function renderWardrobe(root, view, actions) {
     view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
     view.note && h('p', { class: 'note', role: 'alert' }, view.note),
     !view.items.length && h('p', { class: 'hint' }, 'No pieces yet.'),
-    h('button', { class: 'calendar-link', onclick: actions.openCalendar }, '📅 Outfit calendar'),
+    h('div', { class: 'wardrobe-links' },
+      h('button', { onclick: actions.openCalendar }, '📅 Calendar'),
+      h('button', { onclick: actions.openStats }, '📊 Stats')),
     view.style && styleBox(view.style),
     Object.entries(FOLDERS).map(([folder, category]) => {
       const items = view.items.filter((i) => i.category === category);

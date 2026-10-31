@@ -4,7 +4,7 @@ import { createGraph, GraphError } from '../js/onedrive.js';
 
 const G = 'https://graph.microsoft.com/v1.0';
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
-const image = (id) => ({ id, name: `${id}.jpg`, file: { mimeType: 'image/jpeg' }, thumbnails: [{ medium: { url: `https://thumbs.example/${id}` } }] });
+const image = (id) => ({ id, name: `${id}.jpg`, file: { mimeType: 'image/jpeg' }, thumbnails: [{ medium: { url: `https://thumbs.example/${id}` }, large: { url: `https://big.example/${id}` } }] });
 
 // A fake fetch: records every request and answers from [predicate, respond] routes (404 otherwise).
 function fakeFetch(routes = []) {
@@ -60,7 +60,8 @@ test('listWardrobe follows paging and keeps only images', async () => {
   const list = await graph.listWardrobe();
   assert.deepEqual(list.map((e) => e.id), ['a', 'b', 'c']);
   assert.ok(list.every((e) => e.category === 'tops' && e.thumbUrl === `https://thumbs.example/${e.id}`));
-  assert.deepEqual(list[0], { id: 'a', category: 'tops', fileName: 'a.jpg', thumbUrl: 'https://thumbs.example/a' });
+  // The small preview for tiles and color detection, the sharp one for photos shown big.
+  assert.deepEqual(list[0], { id: 'a', category: 'tops', fileName: 'a.jpg', thumbUrl: 'https://thumbs.example/a', bigUrl: 'https://big.example/a' });
   assert.ok(requests.some((r) => r.url === `${G}/next-page-token`));
   const tops = requests.find((r) => r.url.includes('/Wardrobe/Tops:/children'));
   // No $select: it isn't guaranteed to keep the expanded thumbnails in the answer.
@@ -148,7 +149,7 @@ test('uploadPhoto saves the photo into its Wardrobe folder, never over another f
   const { graph, requests } = graphWith([[(r) => r.method === 'PUT', () => json({ id: 'new1', name: 'photo.jpg' }, 201)]]);
   const blob = new Blob(['jpeg bytes'], { type: 'image/jpeg' });
   const added = await graph.uploadPhoto('hoodies', 'photo.jpg', blob);
-  assert.deepEqual(added, { id: 'new1', category: 'hoodies', fileName: 'photo.jpg', thumbUrl: null });
+  assert.deepEqual(added, { id: 'new1', category: 'hoodies', fileName: 'photo.jpg', thumbUrl: null, bigUrl: null });
   const put = requests.find((r) => r.method === 'PUT');
   assert.equal(put.url, `${G}/me/drive/root:/Wardrobe/Hoodies/photo.jpg:/content?@microsoft.graph.conflictBehavior=rename`);
   assert.equal(put.headers['Content-Type'], 'image/jpeg');
