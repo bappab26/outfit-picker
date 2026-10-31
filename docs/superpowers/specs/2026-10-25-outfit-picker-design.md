@@ -113,11 +113,14 @@ and a French interface (the interface is English).
   and swaps the card). **×**, a tap on the dark area, or Esc closes it. The page behind stays still.
 - **Shuffle** replaces all 3 cards with 3 new ones.
 - At the bottom of every screen except the opening ones (sign-in, loading and error, kept
-  clean): "Version <number> · by bap bap", for example "Version 1.17 · by bap bap". The
-  number after "1." goes up by one with every
-  update (it is the number in `CACHE_NAME` in `sw.js`). The line sits at the bottom edge when
+  clean): "<number> · by bap bap", for example "1.17 · by bap bap". The number after "1." goes
+  up by one with every update (it is the number in `CACHE_NAME` in `sw.js`). The line sits at the bottom edge when
   the screen is short, and right after the content when it is long.
 - Zooming is turned off (no pinch or double-tap zoom).
+- A violet leopard print sits behind every screen (she likes leopard): dark violet spots
+  (broken rings around a slightly lighter middle, and small dots) on the violet background.
+  Cards and photo tiles stay plain, so the clothes are still the easiest thing to see. The
+  spots are drawn in `css/app.css` (no image file), 112px apart.
 
 ### Wardrobe screen
 
@@ -173,12 +176,13 @@ Little hidden surprises, none of which gets in the way of picking outfits. The r
   screen 6 times, each tap within 1 second of the last, turns it on or off. From the 4th tap a
   countdown shows ("2…", "1…"), then "Evil mode on 😈" or "Evil mode off". Every screen turns
   blood red: an almost-black red background (#1c0609, also the phone's top bar), dark red
-  cards and crimson buttons and links (#ff3355); photo tiles stay light. A red glow sits at
+  cards and crimson buttons and links (#ff3355); photo tiles stay light. The leopard spots
+  turn almost-black red. A red glow sits at
   the top of every screen and two little red horns sit on the app's name. The phone remembers
   it.
 - **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
-  (light lilac background, dark text) with a gold halo over the name, and the phone's top bar
-  light. It wins over evil mode: the 6 taps then only say "Angels can't go evil 😇".
+  (light lilac background, dark text, soft lilac leopard spots) with a gold halo over the name,
+  and the phone's top bar light. It wins over evil mode: the 6 taps then only say "Angels can't go evil 😇".
 - **Secret card:** holding the version line for 0.8 seconds opens a card with a note from
   bap bap (stored scrambled in the code, so it can't be read at a glance or found by a search)
   and her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite

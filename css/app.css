@@ -16,6 +16,10 @@
   --danger: #ff6b81;
   --danger-text: #3d0712;
   --radius: 14px;
+  /* The leopard print behind every screen: spots only (four broken rings and four dots in a
+     56-unit square, drawn 112px wide), so the background color shows around them. Evil mode
+     and the angel look have their own spot colors. */
+  --leopard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cg fill='%233b2259' stroke='%23170824' stroke-width='2.6' stroke-linecap='round'%3E%3Cellipse cx='12' cy='12' rx='7' ry='5.5' stroke-dasharray='8 3 6 4'/%3E%3Cellipse cx='40' cy='18' rx='6' ry='5' stroke-dasharray='7 4 5 3' transform='rotate(25 40 18)'/%3E%3Cellipse cx='24' cy='38' rx='7.5' ry='5' stroke-dasharray='9 3 4 4' transform='rotate(-15 24 38)'/%3E%3Cellipse cx='48' cy='46' rx='5.5' ry='4.5' stroke-dasharray='6 3 5 3'/%3E%3C/g%3E%3Cg fill='%23170824'%3E%3Ccircle cx='30' cy='8' r='1.8'/%3E%3Ccircle cx='6' cy='30' r='1.5'/%3E%3Ccircle cx='50' cy='32' r='1.6'/%3E%3Ccircle cx='38' cy='52' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 * { box-sizing: border-box; }
@@ -25,7 +29,7 @@ html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--leopard) 0 0 / 112px, var(--bg);
   color: var(--text);
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -388,7 +392,8 @@ body.evil {
   --accent: #ff3355;
   --accent-text: #2a0006;
   --accent-soft: #6e1626;
-  background: radial-gradient(130% 50% at 50% -14%, rgba(255, 30, 60, 0.4), transparent 70%) no-repeat, var(--bg);
+  --leopard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cg fill='%232e0b12' stroke='%230f0204' stroke-width='2.6' stroke-linecap='round'%3E%3Cellipse cx='12' cy='12' rx='7' ry='5.5' stroke-dasharray='8 3 6 4'/%3E%3Cellipse cx='40' cy='18' rx='6' ry='5' stroke-dasharray='7 4 5 3' transform='rotate(25 40 18)'/%3E%3Cellipse cx='24' cy='38' rx='7.5' ry='5' stroke-dasharray='9 3 4 4' transform='rotate(-15 24 38)'/%3E%3Cellipse cx='48' cy='46' rx='5.5' ry='4.5' stroke-dasharray='6 3 5 3'/%3E%3C/g%3E%3Cg fill='%230f0204'%3E%3Ccircle cx='30' cy='8' r='1.8'/%3E%3Ccircle cx='6' cy='30' r='1.5'/%3E%3Ccircle cx='50' cy='32' r='1.6'/%3E%3Ccircle cx='38' cy='52' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
+  background: radial-gradient(130% 50% at 50% -14%, rgba(255, 30, 60, 0.4), transparent 70%) no-repeat, var(--leopard) 0 0 / 112px, var(--bg);
 }
 body.evil .app-name h1::before,
 body.evil .app-name h1::after {
@@ -417,6 +422,7 @@ body.angel {
   --accent-soft: #ece0f8;
   --danger: #c02a46;
   --danger-text: #ffffff;
+  --leopard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cg fill='%23ece0f8' stroke='%23d9c6ee' stroke-width='2.6' stroke-linecap='round'%3E%3Cellipse cx='12' cy='12' rx='7' ry='5.5' stroke-dasharray='8 3 6 4'/%3E%3Cellipse cx='40' cy='18' rx='6' ry='5' stroke-dasharray='7 4 5 3' transform='rotate(25 40 18)'/%3E%3Cellipse cx='24' cy='38' rx='7.5' ry='5' stroke-dasharray='9 3 4 4' transform='rotate(-15 24 38)'/%3E%3Cellipse cx='48' cy='46' rx='5.5' ry='4.5' stroke-dasharray='6 3 5 3'/%3E%3C/g%3E%3Cg fill='%23d9c6ee'%3E%3Ccircle cx='30' cy='8' r='1.8'/%3E%3Ccircle cx='6' cy='30' r='1.5'/%3E%3Ccircle cx='50' cy='32' r='1.6'/%3E%3Ccircle cx='38' cy='52' r='1.4'/%3E%3C/g%3E%3C/svg%3E");
 }
 body.angel .app-name h1::before {
   content: '';
