@@ -1,8 +1,8 @@
 // Home screen: the app's name, occasion and temperature choices, then 3 outfit cards (spec §2).
 // Tapping a card's photos shows that outfit big, on its own, over the screen.
-// The hidden bits (devil mode, the secret card…) come from ui/eggs.js.
+// The hidden bits (evil mode, the secret card…) come from ui/eggs.js.
 import { OCCASIONS, TEMPERATURES } from '../rules.js';
-import { append, choices, h, photo } from './dom.js';
+import { append, bigOutfit, choices, h, photo, tapAttrs } from './dom.js';
 import { birthdayCard, lateNightLine, memoryStrip, nudgeBox, rareTag, secretCard } from './eggs.js';
 import { OCCASION_LABELS, TEMPERATURE_LABELS } from './labels.js';
 
@@ -61,18 +61,8 @@ function card(c, i, view, actions) {
       c.forgotten && forgottenTag(),
       undo),
     nudge,
-    h('div', {
-      class: `pieces zoomable count-${outfit.items.length}`,
-      role: 'button',
-      tabindex: '0',
-      'aria-label': 'See this outfit bigger',
-      onclick: zoom,
-      onkeydown: (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        zoom();
-      },
-    }, outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
+    h('div', { class: `pieces zoomable count-${outfit.items.length}`, ...tapAttrs(zoom, 'See this outfit bigger') },
+      outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
     cardButtons(c, i, actions));
 }
 
@@ -95,20 +85,14 @@ function cardButtons({ liked, worn }, i, actions) {
     }, worn ? 'Worn today ✓' : 'Wore this'));
 }
 
-// One outfit, big, over a darkened screen. × or a tap on the dark area closes it (Esc too, in app.js).
-function bigOutfit(c, i, view, actions) {
-  const close = h('button', { class: 'icon zoom-close', 'aria-label': 'Close', onclick: actions.closeZoom }, '×');
-  const panel = h('div', { class: 'zoom-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Outfit' },
-    h('div', { class: 'zoom-top' }, c.rare && rareTag(), c.forgotten && forgottenTag(), close),
-    h('div', { class: 'zoom-pieces' },
-      c.outfit.items.map((item) => h('figure', { class: 'piece' }, photo(view.photoUrl(item.id), item.fileName)))),
-    cardButtons(c, i, actions));
-  const backdrop = h('div', { class: view.zoomOpening ? 'zoom opening' : 'zoom' }, panel);
-  backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) actions.closeZoom();
+// A card's outfit, big, with the same buttons.
+function bigCard(c, i, view, actions) {
+  return bigOutfit(c.outfit.items.map((item) => ({ url: view.photoUrl(item.id), fileName: item.fileName })), {
+    top: [c.rare && rareTag(), c.forgotten && forgottenTag()],
+    after: cardButtons(c, i, actions),
+    opening: view.zoomOpening,
+    onClose: actions.closeZoom,
   });
-  if (view.zoomOpening) queueMicrotask(() => close.focus({ preventScroll: true }));
-  return backdrop;
 }
 
 export function renderHome(root, view, actions) {
@@ -140,7 +124,7 @@ export function renderHome(root, view, actions) {
       h('div', { class: 'toolbar' }, h('button', { class: 'shuffle', onclick: actions.shuffle }, 'Shuffle')),
       view.notes.map((note) => h('p', { class: 'note' }, NOTE_TEXT[note])),
       view.cards.map((c, i) => card(c, i, view, actions)),
-      view.zoomed !== null && view.cards[view.zoomed]?.outfit && bigOutfit(view.cards[view.zoomed], view.zoomed, view, actions),
+      view.zoomed !== null && view.cards[view.zoomed]?.outfit && bigCard(view.cards[view.zoomed], view.zoomed, view, actions),
     );
   }
   append(root,

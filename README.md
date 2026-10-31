@@ -174,9 +174,9 @@ Phones keep a copy of the app so it opens fast, and pick up a new version the ne
 it's opened. To make phones drop the old copy right away, raise the number in `CACHE_NAME`
 at the top of `sw.js` (`outfit-picker-v1` → `outfit-picker-v2`, and so on) with each update.
 Also, in `js/ui/labels.js`, set `VERSION_NUMBER` to "1." and the same number as `CACHE_NAME`
-(`outfit-picker-v17` → `1.17`), and `VERSION` to the day's date. They show at the bottom of
-the app's screens ("Version 1.17 · 2026-10-25 · by bap bap"; not on the opening screen), so
-you can see which version a phone has. `npm test` checks that the two numbers match.
+(`outfit-picker-v17` → `1.17`). It shows at the bottom of the app's screens ("Version 1.17 · by
+bap bap"; not on the opening screen), so you can see which version a phone has. `npm test`
+checks that the two numbers match.
 If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm test` reminds you).
 
 ## Give it to your friend
@@ -234,8 +234,8 @@ diary, so it goes back as far as her latest 800 Wore this (about two years).
 
 Hidden surprises for her to find (don't spoil them):
 
-- Tap **Version … · by bap bap** at the bottom of the home screen 6 times quickly: devil mode
-  (red, with horns on the name). 6 more taps turn it off.
+- Tap **Version … · by bap bap** at the bottom of the home screen 6 times quickly: evil mode
+  (every screen blood red, with horns on the name). 6 more taps turn it off.
 - Hold that line for about a second: a secret card with your note and her stats.
 - Rename the app with "angel" in the name: pastel colors and a halo.
 - About 1 outfit card in 150 is a **✨ Rare find**.

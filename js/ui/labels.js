@@ -2,11 +2,10 @@
 
 // The app's name until she picks her own (also in index.html and manifest.webmanifest).
 export const DEFAULT_NAME = 'lil evil wardrobe';
-// This version's number and date: change both with every update (see README, "Put it online").
-// The number after "1." is the one in CACHE_NAME in sw.js.
-export const VERSION_NUMBER = '1.20';
-export const VERSION = '2026-10-30';
-export const VERSION_LINE = `Version ${VERSION_NUMBER} · ${VERSION} · by bap bap`;
+// This version's number: raise it with every update (see README, "Put it online"). The number
+// after "1." is the one in CACHE_NAME in sw.js.
+export const VERSION_NUMBER = '1.21';
+export const VERSION_LINE = `Version ${VERSION_NUMBER} · by bap bap`;
 
 export const OCCASION_LABELS = { everyday: 'Everyday', work: 'Work', evening: 'Evening out', special: 'Special event', home: 'At home' };
 export const TEMPERATURE_LABELS = { cold: 'Cold', mild: 'Mild', hot: 'Hot' };

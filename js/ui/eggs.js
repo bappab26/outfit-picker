@@ -6,7 +6,7 @@ import { BIRTHDAY, EGGS, longDate, secretNote } from '../eggs.js';
 import { h, photo, swatch } from './dom.js';
 import { VERSION_LINE, colorLabel } from './labels.js';
 
-// Taps count toward devil mode; holding it opens the secret card.
+// Taps count toward evil mode; holding it opens the secret card.
 export function versionLine(actions) {
   let timer = null;
   const stop = () => {

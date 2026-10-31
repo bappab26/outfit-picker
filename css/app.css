@@ -217,9 +217,10 @@ button.link {
 
 .card-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 
-/* One outfit shown big: tap a card's photos (home.js). */
-.pieces.zoomable { cursor: zoom-in; border-radius: 10px; }
-.pieces.zoomable:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+/* One outfit shown big: tap a card's photos (home.js) or an outfit in the calendar (worn.js). */
+.zoomable { cursor: zoom-in; }
+.pieces.zoomable { border-radius: 10px; }
+.zoomable:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 body.no-scroll { overflow: hidden; }
 .zoom {
   position: fixed;
@@ -329,6 +330,7 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 .day[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
 .day[aria-pressed="true"]::after { background: var(--accent-text); }
 .worn-outfit h2 { font-size: 16px; margin: 0 0 8px; }
+.zoom-top h2 { margin: 0; font-size: 16px; }
 .calendar + .hint { margin-top: 16px; }
 .add-box {
   margin: 0 0 12px;
@@ -373,16 +375,23 @@ label.chip:focus-within { outline: 3px solid var(--accent); outline-offset: 2px;
 /* The version line counts taps and opens the secret card when held: no text selection or phone menu. */
 .secret-line { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
-/* Devil mode: red accents, a red glow at the top and two little horns on the name. */
-body.devil {
-  --accent: #ff9fb0;
-  --accent-text: #3d0712;
-  --accent-soft: #7a2850;
-  --line: #74406f;
-  background: radial-gradient(130% 50% at 50% -14%, rgba(255, 40, 90, 0.42), transparent 70%) no-repeat, var(--bg);
+/* Evil mode: every screen blood red (photo tiles stay light), a red glow at the top and two
+   little horns on the name. */
+body.evil {
+  --bg: #1c0609;
+  --surface: #3a0f17;
+  --text: #fbeef0;
+  --muted: #d9a9b2;
+  --line: #6b1d2b;
+  --tile: #f8eef0;
+  --tile-text: #6b3a43;
+  --accent: #ff3355;
+  --accent-text: #2a0006;
+  --accent-soft: #6e1626;
+  background: radial-gradient(130% 50% at 50% -14%, rgba(255, 30, 60, 0.4), transparent 70%) no-repeat, var(--bg);
 }
-body.devil .app-name h1::before,
-body.devil .app-name h1::after {
+body.evil .app-name h1::before,
+body.evil .app-name h1::after {
   content: '';
   position: absolute;
   top: -13px;
@@ -391,8 +400,8 @@ body.devil .app-name h1::after {
   background: #ff3b5c;
   clip-path: polygon(0 0, 34% 14%, 66% 42%, 100% 100%, 16% 100%, 4% 62%);
 }
-body.devil .app-name h1::before { left: 0; transform: rotate(-8deg); }
-body.devil .app-name h1::after { right: 0; transform: scaleX(-1) rotate(-8deg); }
+body.evil .app-name h1::before { left: 0; transform: rotate(-8deg); }
+body.evil .app-name h1::after { right: 0; transform: scaleX(-1) rotate(-8deg); }
 
 /* A name with "angel" in it: soft pastel colors and a halo over the name. */
 body.angel {

@@ -14,10 +14,10 @@ const withItems = (...items) => {
 };
 const line = (date, kind, ids) => ({ date, kind, occasion: 'everyday', ids });
 
-test('a name with "angel" in it gives the angel look, even in devil mode', () => {
+test('a name with "angel" in it gives the angel look, even in evil mode', () => {
   assert.equal(eggTheme('lil angel wardrobe', false), 'angel');
   assert.equal(eggTheme('My ANGEL closet', true), 'angel');
-  assert.equal(eggTheme('lil evil wardrobe', true), 'devil');
+  assert.equal(eggTheme('lil evil wardrobe', true), 'evil');
   assert.equal(eggTheme('lil evil wardrobe', false), null);
 });
 
@@ -28,7 +28,7 @@ test('taps on the version line add up while they come quickly, and start over af
   assert.equal(taps.count, 2);
   taps = countTap(taps, 1000 + 3 * EGGS.tapGapMs);
   assert.equal(taps.count, 1);
-  assert.equal(EGGS.devilTaps, 6);
+  assert.equal(EGGS.evilTaps, 6);
 });
 
 test('about one card in 150 is a rare find', () => {

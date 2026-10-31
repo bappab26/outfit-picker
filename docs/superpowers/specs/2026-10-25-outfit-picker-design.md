@@ -113,8 +113,8 @@ and a French interface (the interface is English).
   and swaps the card). **×**, a tap on the dark area, or Esc closes it. The page behind stays still.
 - **Shuffle** replaces all 3 cards with 3 new ones.
 - At the bottom of every screen except the opening ones (sign-in, loading and error, kept
-  clean): "Version <number> · <date> · by bap bap", for example
-  "Version 1.17 · 2026-10-25 · by bap bap". The number after "1." goes up by one with every
+  clean): "Version <number> · by bap bap", for example "Version 1.17 · by bap bap". The
+  number after "1." goes up by one with every
   update (it is the number in `CACHE_NAME` in `sw.js`). The line sits at the bottom edge when
   the screen is short, and right after the content when it is long.
 - Zooming is turned off (no pinch or double-tap zoom).
@@ -148,6 +148,9 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
   occasion and photos of the pieces ("Fri, Oct 30 · Work"). The same outfit twice on one day
   shows once. Pieces deleted since are left out ("These pieces are no longer in your
   wardrobe." when none are left). A day with nothing says "Nothing saved for this day."
+- Tapping an outfit shows it big, like a home-screen card: its date and occasion, the photos
+  two per row, and no buttons, since that day is over. **×**, a tap on the dark area, or Esc
+  closes it.
 - It reads the diary's Wore this lines (§4.5), so nothing new is saved. The diary keeps her
   latest 800 Wore this, about two years. Undo on Wore this takes it off the calendar too.
 - On a 320px screen the days are 41px wide and 44px tall: seven 44px columns don't fit.
@@ -166,14 +169,16 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
 Little hidden surprises, none of which gets in the way of picking outfits. The rules are in
 `js/eggs.js`.
 
-- **Devil mode:** tapping the version line at the bottom of the home screen 6 times, each tap
-  within 1.5 seconds of the last, turns it on or off. From the 4th tap a countdown shows
-  ("2…", "1…"), then "Devil mode on 😈" or "Devil mode off". The accents turn red, a red
-  glow sits at the top of every screen and two little red horns sit on the app's name. The
-  phone remembers it.
+- **Evil mode** (first called devil mode): tapping the version line at the bottom of the home
+  screen 6 times, each tap within 1 second of the last, turns it on or off. From the 4th tap a
+  countdown shows ("2…", "1…"), then "Evil mode on 😈" or "Evil mode off". Every screen turns
+  blood red: an almost-black red background (#1c0609, also the phone's top bar), dark red
+  cards and crimson buttons and links (#ff3355); photo tiles stay light. A red glow sits at
+  the top of every screen and two little red horns sit on the app's name. The phone remembers
+  it.
 - **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
   (light lilac background, dark text) with a gold halo over the name, and the phone's top bar
-  light. It wins over devil mode: the 6 taps then only say "Angels can't go evil 😇".
+  light. It wins over evil mode: the 6 taps then only say "Angels can't go evil 😇".
 - **Secret card:** holding the version line for 0.8 seconds opens a card with a note from
   bap bap (stored scrambled in the code, so it can't be read at a glance or found by a search)
   and her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
