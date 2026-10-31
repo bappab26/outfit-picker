@@ -10,7 +10,7 @@ import { createGraph, GraphError } from './onedrive.js';
 import { photoFileName, shrinkPhoto } from './photos.js';
 import { pickOutfits } from './rules.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
-import { allItems, createSaver, labeledItems, tidyName, unlabeledIds } from './store.js';
+import { allItems, createSaver, labeledItems, tidyName, tidyNote, unlabeledIds } from './store.js';
 import { append, clear, h } from './ui/dom.js';
 import { versionLine } from './ui/eggs.js';
 import { renderHome } from './ui/home.js';
@@ -94,6 +94,8 @@ const state = {
   confirmDelete: false,
   busy: null,
   note: null,
+  // Wardrobe screen: what she searched for and how the pieces are sorted (find.js).
+  wardrobe: { query: '', sort: 'folder' },
   // Outfit calendar: the month shown ('YYYY-MM'), the day picked and the outfit of that day
   // shown big (its index), or null.
   worn: { month: null, day: null, zoomed: null },
@@ -384,6 +386,14 @@ const labelActions = {
   setColor: (color) => setLabel('color', color),
   setWarmth: (warmth) => setLabel('warmth', warmth),
   setStyle: (style) => setLabel('style', style),
+  // Saved as she types, without drawing the screen again (the box would lose its place).
+  setNote(text) {
+    const item = state.data.items[labelId()];
+    const note = tidyNote(text);
+    if (note) item.note = note;
+    else delete item.note;
+    changed();
+  },
   skip: nextPiece,
   done: () => show('wardrobe'),
   back: () => (state.label.mode === 'new' ? goHome() : show('wardrobe')),
@@ -474,6 +484,14 @@ const wardrobeActions = {
   },
   openStats() {
     show('stats');
+  },
+  // Remembered without drawing the screen again: the screen swaps in the new list itself.
+  search(query) {
+    state.wardrobe.query = query;
+  },
+  setSort(sort) {
+    state.wardrobe.sort = sort;
+    render();
   },
 };
 
@@ -676,6 +694,8 @@ function renderWardrobeScreen() {
     adding: state.adding,
     busy: state.busy,
     note: state.note,
+    query: state.wardrobe.query,
+    sort: state.wardrobe.sort,
   }, wardrobeActions);
 }
 

@@ -4,7 +4,7 @@
 export const DEFAULT_NAME = 'lil evil';
 // This version's number: raise it with every update (see README, "Put it online"). The number
 // after "1." is the one in CACHE_NAME in sw.js.
-export const VERSION_NUMBER = '1.25';
+export const VERSION_NUMBER = '1.26';
 export const VERSION_LINE = `${VERSION_NUMBER} · by bap bap`;
 
 export const OCCASION_LABELS = { everyday: 'Everyday', work: 'Work', evening: 'Evening out', special: 'Special event', home: 'At home' };

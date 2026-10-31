@@ -202,6 +202,9 @@ If you add a new file under `js/`, add it to `APP_FILES` in `sw.js` too (`npm te
    - One piece per photo, on a plain background.
    - A piece in the wrong folder: tap it in Wardrobe and pick another **Folder**. To remove
      one, tap it and **Delete piece**.
+   - To find a piece, use the search box in Wardrobe ("black", "jeans", or words from a
+     note), or sort by **Most worn**, **Never worn** or **Newest**.
+   - To write a note on a piece ("needs ironing"), tap it in Wardrobe and type in **Note**.
 
 ## How it learns her style
 
