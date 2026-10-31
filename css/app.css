@@ -326,6 +326,7 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
   cursor: pointer;
 }
 .photo-pick:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+.photo-pick.waiting, label.chip.waiting { opacity: 0.5; cursor: default; }
 .shop-photo-row { display: flex; align-items: flex-end; gap: 12px; margin: 12px 0 16px; }
 .shop-photo { flex: none; width: 120px; }
 .shop-result h2 { margin: 0 0 2px; font-size: 18px; }

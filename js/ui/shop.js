@@ -10,13 +10,14 @@ import { STYLE_LABELS, TYPE_LABELS, WARMTH_LABELS, colorLabel } from './labels.j
 const outfits = (n) => (n === 1 ? 'Goes with 1 outfit' : `Goes with ${n} outfits`);
 const title = ({ color, category, style }) => `${colorLabel(color)} · ${TYPE_LABELS[category]} · ${STYLE_LABELS[style]}`;
 
-// A label around a hidden photo picker, so one tap opens the phone's camera or gallery.
-function photoPicker(text, className, actions) {
-  const input = h('input', { type: 'file', accept: 'image/*', class: 'file-input' });
+// A label around a hidden photo picker, so one tap opens the phone's camera or gallery. It
+// waits while OneDrive is busy, so a new check can't replace one being saved.
+function photoPicker(text, className, view, actions) {
+  const input = h('input', { type: 'file', accept: 'image/*', class: 'file-input', disabled: Boolean(view.busy) });
   input.addEventListener('change', () => {
     if (input.files[0]) actions.pickPhoto(input.files[0]);
   });
-  return h('label', { class: className }, text, input);
+  return h('label', { class: view.busy ? `${className} waiting` : className }, text, input);
 }
 
 function wishCard(wish, view, actions) {
@@ -35,7 +36,8 @@ function startScreen(view, actions) {
   else if (!view.wishlist.length) wishlist = h('p', { class: 'hint' }, 'Nothing here yet. Check a piece and tap Save to wishlist.');
   else wishlist = view.wishlist.map((wish) => wishCard(wish, view, actions));
   return [
-    photoPicker('🛍️ Check a piece', 'photo-pick', actions),
+    photoPicker('🛍️ Check a piece', 'photo-pick', view, actions),
+    busyAndNote(view),
     h('h2', {}, 'Wishlist'),
     wishlist,
   ];
@@ -55,13 +57,20 @@ function result(view) {
     ]);
 }
 
-// What she can do with the check: save it, or for a wishlist item, buy or remove it.
+// What OneDrive is busy with ("Saving…"), and a note when that failed.
+const busyAndNote = (view) => [
+  view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
+  view.note && h('p', { class: 'note', role: 'alert' }, view.note),
+];
+
+// What she can do with the check: save it, or for a wishlist item, buy or remove it. Nothing
+// can end the check while OneDrive is busy with it.
 function checkActions(view, actions) {
   const { check } = view;
   const busy = Boolean(view.busy);
   if (!check.wishId) {
     return h('div', { class: 'shop-actions' },
-      h('button', { onclick: actions.done }, 'Done'),
+      h('button', { disabled: busy, onclick: actions.done }, 'Done'),
       view.canWishlist && view.result && h('button', { class: 'primary', disabled: busy, onclick: actions.save }, 'Save to wishlist'));
   }
   if (view.confirmRemove) {
@@ -73,7 +82,7 @@ function checkActions(view, actions) {
   }
   return h('div', { class: 'shop-actions' },
     h('button', { class: 'danger-link', disabled: busy, onclick: actions.askRemove }, 'Remove'),
-    h('button', { onclick: actions.done }, 'Done'),
+    h('button', { disabled: busy, onclick: actions.done }, 'Done'),
     h('button', { class: 'primary', disabled: busy, onclick: actions.buy }, 'I bought it'));
 }
 
@@ -83,14 +92,13 @@ function checkScreen(view, actions) {
   return [
     h('div', { class: 'shop-photo-row' },
       h('div', { class: 'shop-photo' }, photo(check.photo, 'Photo')),
-      !check.wishId && photoPicker('Retake photo', 'chip', actions)),
+      !check.wishId && photoPicker('Retake photo', 'chip', view, actions)),
     colorChoice(check.color, actions.setColor),
     choices('What is it?', Object.values(FOLDERS), TYPE_LABELS, check.category, actions.setCategory),
     choices('Style', STYLES, STYLE_LABELS, check.style, actions.setStyle),
     choices('Warmth', WARMTHS, WARMTH_LABELS, check.warmth, actions.setWarmth),
     result(view),
-    view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
-    view.note && h('p', { class: 'note', role: 'alert' }, view.note),
+    busyAndNote(view),
     checkActions(view, actions),
   ];
 }

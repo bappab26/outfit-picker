@@ -534,6 +534,7 @@ const shopActions = {
     show('wardrobe');
   },
   async pickPhoto(file) {
+    if (state.busy) return; // a check is being saved: it stays until that's done
     endCheck();
     let color = null;
     try {
@@ -549,6 +550,7 @@ const shopActions = {
   setStyle: (style) => setCheck('style', style),
   setWarmth: (warmth) => setCheck('warmth', warmth),
   done() {
+    if (state.busy) return;
     endCheck();
     render();
     window.scrollTo(0, 0);
@@ -562,22 +564,23 @@ const shopActions = {
     window.scrollTo(0, 0);
   },
   // These three talk to OneDrive; a second tap while one runs does nothing. On failure the
-  // check stays, with a note.
+  // check stays, with a note. On success they end the check they started from, and only that
+  // one (she may have left and come back).
   async save() {
     const { check } = state.shop;
     if (state.busy || !check || !readyToCheck(check)) return;
     if (await busyChange('Saving…', () => state.source.saveToWishlist(state.data, check.blob, check))) {
       changed();
-      endCheck();
+      if (state.shop.check === check) endCheck();
     }
     if (state.screen === 'shop') render();
   },
   async buy() {
-    const id = state.shop.check?.wishId;
-    if (state.busy || !id) return;
-    if (await busyChange('Moving…', () => state.source.buyWishlistItem(state.data, id))) {
+    const { check } = state.shop;
+    if (state.busy || !check?.wishId) return;
+    if (await busyChange('Moving…', () => state.source.buyWishlistItem(state.data, check.wishId))) {
       changed();
-      endCheck();
+      if (state.shop.check === check) endCheck();
       toast('Added to your wardrobe 🎉');
     }
     if (state.screen === 'shop') render();
@@ -591,12 +594,12 @@ const shopActions = {
     render();
   },
   async confirmRemove() {
-    const id = state.shop.check?.wishId;
-    if (state.busy || !id) return;
-    if (await busyChange('Removing…', () => state.source.removeWishlistItem(state.data, id))) {
+    const { check } = state.shop;
+    if (state.busy || !check?.wishId) return;
+    if (await busyChange('Removing…', () => state.source.removeWishlistItem(state.data, check.wishId))) {
       changed();
-      endCheck();
-    } else {
+      if (state.shop.check === check) endCheck();
+    } else if (state.shop.check === check) {
       state.shop.confirmRemove = false;
     }
     if (state.screen === 'shop') render();
