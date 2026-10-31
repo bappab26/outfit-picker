@@ -24,6 +24,7 @@ const APP_FILES = [
   'js/rules.js',
   'js/sample.js',
   'js/settings.js',
+  'js/shop.js',
   'js/sources.js',
   'js/stats.js',
   'js/store.js',
