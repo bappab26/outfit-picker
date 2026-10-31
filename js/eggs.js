@@ -28,7 +28,7 @@ export const BIRTHDAY = {
 };
 
 // The note on the secret card, scrambled so it can't be read at a glance or found by a search.
-const NOTE = 'QnVpbHQgd2l0aCBsb3ZlIGFuZCB6ZXJvIGZhc2hpb24gc2Vuc2UgYnkgYmFwIGJhcCDwn5ak';
+const NOTE = 'QnVpbHQgd2l0aCB6ZXJvIGZhc2hpb24gc2Vuc2UgYnkgYmFwIGJhcCDwn5ak';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December'];
