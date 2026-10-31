@@ -201,9 +201,9 @@ Little hidden surprises, none of which gets in the way of picking outfits. The r
 - **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
   (light lilac background, dark text, soft lilac leopard spots) with a gold halo over the name,
   and the phone's top bar light. It wins over evil mode: the 6 taps then only say "Angels can't go evil 😇".
-- **Secret card:** holding the version line for 0.8 seconds opens a card with a note from
-  bap bap (stored scrambled in the code, so it can't be read at a glance or found by a search)
-  and her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
+- **Secret card:** holding the version line for 0.8 seconds opens a card whose title is a note
+  from bap bap, "Built with zero fashion sense by bap bap 🖤" (stored scrambled in the code, so
+  it can't be read at a glance or found by a search), then her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
   color (the color she has worn most) and the day her wardrobe started (the earliest piece).
   Lines with nothing to show yet are left out. × or a tap on the dark area closes it.
 - **Rare find:** each outfit card has a 1 in 150 chance of a gold edge, a shimmer and a
