@@ -45,16 +45,20 @@ body {
   #app.screen-in { animation: none; }
 }
 
-/* Swiping right to go back (app.js): the screen follows her finger, nothing scrolls sideways
-   or gets selected meanwhile, and it slides back if she lets go too soon. */
+/* Swiping right to go back (app.js): the screen follows her finger over the one Back goes to
+   (.swipe-behind), nothing scrolls sideways or gets selected meanwhile, and it slides back if
+   she lets go too soon (in SLIDE_BACK_MS). */
 body.swiping { overflow-x: clip; -webkit-user-select: none; user-select: none; }
+body.swiping #app { background: inherit; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45); }
 #app.swipe-return { transition: transform 0.2s ease-out; }
+.swipe-behind { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   #app.swipe-return { transition: none; }
 }
 
-/* At least as tall as the screen, so the version line can sit at the bottom (.version). */
-#app {
+/* At least as tall as the screen, so the version line can sit at the bottom (.version). The
+   screen behind a swipe is laid out the same. */
+#app, .swipe-behind {
   display: flex;
   flex-direction: column;
   min-height: 100vh;

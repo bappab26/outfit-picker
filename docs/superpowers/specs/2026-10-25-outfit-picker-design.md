@@ -192,8 +192,9 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
 - Every screen with a **Back** button (Wardrobe, labeling, the calendar, stats, shop check)
   also goes back with a swipe to the right, starting anywhere on the screen. It does what Back
   does. An app opened from the iPhone home screen has no swipe back of its own.
-- The screen follows her finger. Letting go a third of the way across, or with a quick flick,
-  goes back; otherwise the screen slides back into place.
+- The screen follows her finger, with the screen Back goes to showing behind it (home with the
+  outfits she'll get). Letting go a third of the way across, or with a quick flick, goes back;
+  otherwise the screen slides back into place.
 - Only sideways swipes count, so scrolling up and down is unchanged. A swipe that starts in a
   text box, or while a big photo is open, does nothing. A mouse drag works too, for trying it
   on a computer.

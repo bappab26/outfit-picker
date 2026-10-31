@@ -879,23 +879,69 @@ const SCREENS = {
 };
 
 // Swiping right does what Back does (swipe.js), on the screens that have it, but never while a
-// big photo is open. The screen follows her finger, and slides back if she lets go too soon.
-const BACKS = { label: labelActions, wardrobe: wardrobeActions, worn: calendarActions, stats: statsActions, shop: shopActions };
+// big photo is open. The screen follows her finger, with the screen Back goes to (`to`) showing
+// behind it, and slides back if she lets go too soon.
+const BACKS = {
+  label: { actions: labelActions, to: () => (state.label.mode === 'new' ? 'home' : 'wardrobe') },
+  wardrobe: { actions: wardrobeActions, to: () => 'home' },
+  worn: { actions: calendarActions, to: () => 'wardrobe' },
+  stats: { actions: statsActions, to: () => 'wardrobe' },
+  shop: { actions: shopActions, to: () => 'wardrobe' },
+};
+// How long a swipe she let go too soon takes to slide back (css/app.css).
+const SLIDE_BACK_MS = 200;
+// The screen behind during a swipe ({ layer, screen }), and the timer that takes it away.
+let behind = null;
+let behindTimer = null;
+
 watchSwipes(root, {
-  backAction: () => (root.querySelector('.zoom-panel') ? null : BACKS[state.screen]?.back ?? null),
+  backAction() {
+    const back = BACKS[state.screen];
+    if (!back || root.querySelector('.zoom-panel')) return null;
+    // Home behind has its outfits picked already: going back keeps them, as she saw them.
+    return behind?.screen === 'home' ? () => show('home') : back.actions.back;
+  },
   width: () => root.clientWidth,
   drag(px) {
+    clearTimeout(behindTimer);
+    behind ??= drawBehind(BACKS[state.screen].to());
     root.classList.remove('swipe-return');
     document.body.classList.add('swiping');
     root.style.transform = `translateX(${px}px)`;
     getSelection()?.removeAllRanges(); // a mouse drag would select text
   },
   release(wentBack) {
-    document.body.classList.remove('swiping');
-    root.classList.toggle('swipe-return', !wentBack);
     root.style.transform = '';
+    if (wentBack) {
+      root.classList.remove('screen-in'); // the screen she went back to is already in view
+      endSwipe();
+    } else {
+      root.classList.add('swipe-return');
+      behindTimer = setTimeout(endSwipe, SLIDE_BACK_MS);
+    }
   },
 });
+
+// Draws `screen` as Back would show it, in a layer behind the app that can't be tapped.
+function drawBehind(screen) {
+  if (screen === 'home') recompute(); // as goHome does
+  const saved = { screen: state.screen };
+  for (const key of Object.keys(NEW_SCREEN)) saved[key] = state[key];
+  Object.assign(state, NEW_SCREEN, { screen });
+  const layer = h('div', { class: 'swipe-behind', 'aria-hidden': 'true', inert: true });
+  const current = screenRoot;
+  drawScreen(layer);
+  screenRoot = current;
+  Object.assign(state, saved);
+  root.before(layer);
+  return { layer, screen };
+}
+
+function endSwipe() {
+  behind?.layer.remove();
+  behind = null;
+  document.body.classList.remove('swiping');
+}
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
 function applyTheme() {
@@ -906,26 +952,36 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
 }
 
+// Draws the current screen into `into`: the app, or the layer behind a swipe. False if the
+// screen changed while being drawn, and was drawn again (renderLabelScreen).
+function drawScreen(into) {
+  const content = h('div', { class: 'screen' });
+  into.append(content);
+  screenRoot = content;
+  SCREENS[state.screen]();
+  if (screenRoot !== content) return false;
+  // The version line, at the bottom of every screen but the opening ones; on the home screen
+  // its quick taps turn evil mode on and off (ui/eggs.js).
+  if (state.screen === 'home') into.append(versionLine(homeActions));
+  else if (!NO_VERSION_LINE.includes(state.screen)) into.append(h('footer', { class: 'version' }, VERSION_LINE));
+  return true;
+}
+
 function render() {
   document.title = displayName();
   applyTheme();
   // A tap inside the big outfit redraws it: keep it scrolled where it was.
   const zoomScroll = root.querySelector('.zoom-panel')?.scrollTop ?? 0;
   clear(root);
-  const content = h('div', { class: 'screen' });
-  root.append(content);
-  screenRoot = content;
-  SCREENS[state.screen]();
-  if (screenRoot !== content) return; // the screen changed and was drawn again (renderLabelScreen)
-  // The version line, at the bottom of every screen but the opening ones; on the home screen
-  // its quick taps turn evil mode on and off (ui/eggs.js).
-  if (state.screen === 'home') root.append(versionLine(homeActions));
-  else if (!NO_VERSION_LINE.includes(state.screen)) root.append(h('footer', { class: 'version' }, VERSION_LINE));
+  if (!drawScreen(root)) return;
   const panel = root.querySelector('.zoom-panel');
   if (panel) panel.scrollTop = zoomScroll;
   // The page behind the big outfit stays still.
   document.body.classList.toggle('no-scroll', Boolean(panel));
 }
+
+// What a screen starts without: nothing being added, asked, noted or shown big.
+const NEW_SCREEN = { adding: false, confirmDelete: false, note: null, zoomed: null, birthdayOpen: false };
 
 // Switches screens. A new screen fades in; showing the same one again (the next piece to
 // label) doesn't, and neither do taps that only redraw the screen (render). From the opening
@@ -934,7 +990,7 @@ function show(screen) {
   const isNew = screen !== state.screen;
   const openingTitle = isNew && screen === 'home' && root.querySelector('.signin h1');
   const from = openingTitle && spotOf(openingTitle);
-  if (isNew) Object.assign(state, { adding: false, confirmDelete: false, note: null, zoomed: null, birthdayOpen: false });
+  if (isNew) Object.assign(state, NEW_SCREEN);
   state.screen = screen;
   render();
   window.scrollTo(0, 0);

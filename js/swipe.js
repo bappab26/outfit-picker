@@ -15,7 +15,8 @@ const TEXT_BOXES = 'input, textarea, select, [contenteditable]';
 
 // Watches `surface` for swipes. `backAction()` is what Back does on the screen now, or null when
 // there's nothing to go back to; `width()` is the screen's width. `drag(px)` moves the screen px
-// to the right as she swipes, and `release(wentBack)` puts it back in place when she lets go.
+// to the right as she swipes, and `release(wentBack)` puts it back in place when she lets go
+// (when it went back, after Back has drawn the screen she swiped to).
 export function watchSwipes(surface, { backAction, width, drag, release }) {
   // While a finger is down: where it started, whether the screen is following it, and its
   // recent positions (for flicks).
@@ -54,19 +55,21 @@ export function watchSwipes(surface, { backAction, width, drag, release }) {
     const { x, sliding, samples } = swipe;
     swipe = null;
     if (!sliding) return;
+    setTimeout(() => { skipClick = false; }); // that tap comes right after she lets go, or never
     const t = event.timeStamp;
     const recent = samples.find((sample) => t - sample.t <= FLICK_TIME);
     const speed = recent && t > recent.t ? (event.clientX - recent.x) / (t - recent.t) : 0;
     const action = backAction();
     const goes = Boolean(action) && (event.clientX - x >= width() * FAR || speed >= FLICK);
-    release(goes);
     if (goes) action();
+    release(goes);
   });
 
   surface.addEventListener('pointercancel', (event) => {
     if (event.pointerId !== swipe?.id) return;
     if (swipe.sliding) release(false);
     swipe = null;
+    skipClick = false; // no tap follows
   });
 
   surface.addEventListener('click', (event) => {
