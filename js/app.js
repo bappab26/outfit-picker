@@ -76,7 +76,7 @@ const state = {
   saver: null,
   cards: [],
   notes: [],
-  // The card shown big (its index), or null; `zoomOpening` makes it zoom in only as it opens.
+  // The piece shown big (its id), or null; `zoomOpening` makes it zoom in only as it opens.
   zoomed: null,
   zoomOpening: false,
   saveError: false,
@@ -219,12 +219,12 @@ const homeActions = {
     // Never put the outfit she just turned down straight back on screen.
     if (next && next.key !== before.outfit.key) state.cards[i] = { ...newCard(next), undoDislike, nudge };
     else state.cards[i] = { outfit: null, undoDislike, nudge };
-    state.zoomed = null; // the outfit she was looking at is gone
+    state.zoomed = null; // the cards changed under it
     changed();
     render();
   },
-  zoom(i) {
-    state.zoomed = i;
+  zoom(id) {
+    state.zoomed = id;
     state.zoomOpening = true;
     render();
   },

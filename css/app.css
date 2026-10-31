@@ -221,9 +221,9 @@ button.link {
 
 .card-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 
-/* One outfit shown big: tap a card's photos (home.js) or an outfit in the calendar (worn.js). */
+/* Shown big: tap a piece on a home card (home.js) or an outfit in the calendar (worn.js). */
 .zoomable { cursor: zoom-in; }
-.pieces.zoomable { border-radius: 10px; }
+.piece.zoomable { border-radius: 10px; }
 .zoomable:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
 body.no-scroll { overflow: hidden; }
 .zoom {
@@ -249,6 +249,7 @@ body.no-scroll { overflow: hidden; }
 .zoom-top { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
 .zoom-close { margin-left: auto; font-size: 26px; line-height: 1; }
 .zoom-pieces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.zoom-pieces.single { grid-template-columns: minmax(0, 1fr); }
 @keyframes zoom-fade { from { opacity: 0; } }
 @keyframes zoom-grow { from { opacity: 0; transform: scale(0.92); } }
 .zoom.opening { animation: zoom-fade 0.2s ease-out; }
