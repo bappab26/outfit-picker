@@ -135,7 +135,23 @@ and a French interface (the interface is English).
   - Both change OneDrive first: if that fails (offline), the piece stays as it was and a note
     says so.
 - A **Refresh** button checks OneDrive again for new, moved or deleted photos.
-- A **📅 Outfit calendar** button opens the outfit calendar.
+- Two buttons side by side: **📅 Calendar** opens the outfit calendar and **📊 Stats** the
+  wardrobe stats.
+
+### Wardrobe stats (added later)
+
+Her wardrobe in numbers. The numbers come from `js/stats.js`, the screen is `js/ui/stats.js`.
+
+- Four tiles: pieces, outfits worn (her Wore this taps), outfits worn this month and pieces
+  never worn.
+- **Most worn:** her 3 most-worn pieces with "12 times" under each photo (on a tie, the one
+  worn last first).
+- **Colors:** one bar split by color, as wide as each color's share of her labeled pieces,
+  with "Black 12 · White 8 …" under it.
+- **What you dress for:** a bar per occasion she picked for her Wore this (from the diary),
+  most first.
+- Each part says what to do when it has nothing to show yet ("Your most-worn pieces show up
+  here once you tap Wore this.").
 
 ### Outfit calendar (added later)
 
@@ -384,8 +400,11 @@ On each app open (and when she taps **Refresh** on the Wardrobe screen):
 1. Make sure `Wardrobe` and its 11 subfolders exist; create any that are missing.
 2. List the image files in each subfolder through Microsoft Graph, including their
    thumbnails, following paging links.
-3. Show photos using the **medium thumbnail**, not the full photo. This keeps it fast and
-   also handles iPhone HEIC photos, since OneDrive's thumbnails are regular images.
+3. Show photos using the **medium thumbnail** (about 176px), not the full photo. This keeps
+   it fast and also handles iPhone HEIC photos, since OneDrive's thumbnails are regular
+   images. Photos shown big (an outfit opened big, the labeling screen) use the **large
+   thumbnail** (about 800px) from the same listing: the medium one shows at once and the
+   large one replaces it when it has loaded (`sharpPhoto` in `js/ui/dom.js`).
 4. Compare with the saved data (see 4.5):
    - **New photo:** added as unlabeled, with its detected color.
    - **Photo moved to another subfolder:** its type updates; its labels are kept.
@@ -471,11 +490,13 @@ js/feedback.js           Apply 👍, 👎 and Wore this to the data
 js/habits.js             Learn her habits from the diary (section 3.6)
 js/eggs.js               Easter egg rules (section 2, Easter eggs)
 js/worn.js               What she wore each day, for the outfit calendar (section 2)
+js/stats.js              Her wardrobe in numbers, for the stats screen (section 2)
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
 js/ui/worn.js            Outfit calendar screen
+js/ui/stats.js           Wardrobe stats screen
 js/ui/eggs.js            The hidden bits of the home screen
 js/ui/party.js           Short messages and confetti
 js/ui/intro.js           The name's 7 opening animations

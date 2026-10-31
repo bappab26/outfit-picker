@@ -5,7 +5,7 @@ import { NeedsSignIn } from '../js/errors.js';
 
 const today = '2026-10-25';
 const PENDING = 'outfit-picker:pending';
-const entry = (id) => ({ id, category: 'tops', fileName: `${id}.jpg`, thumbUrl: `https://thumbs.example/${id}` });
+const entry = (id) => ({ id, category: 'tops', fileName: `${id}.jpg`, thumbUrl: `https://thumbs.example/${id}`, bigUrl: `https://big.example/${id}` });
 const pieceA = (extra = {}) => ({ category: 'tops', fileName: 'a.jpg', color: 'red', warmth: 'light', style: 'casual', addedAt: '2026-10-01', lastWorn: null, wearCount: 0, ...extra });
 const dataWithA = (extra) => JSON.stringify({ version: 1, items: { a: pieceA(extra) } });
 
@@ -165,6 +165,15 @@ test('photoUrl returns the thumbnail from the latest listing', async () => {
   assert.equal(source.photoUrl('zzz'), null);
 });
 
+test('bigPhotoUrl returns the sharp preview, or the small one when OneDrive has no sharp one', async () => {
+  const { graph, source } = setup();
+  graph.listing = [entry('a'), { ...entry('b'), bigUrl: null }];
+  await source.load();
+  assert.equal(source.bigPhotoUrl('a'), 'https://big.example/a');
+  assert.equal(source.bigPhotoUrl('b'), 'https://thumbs.example/b');
+  assert.equal(source.bigPhotoUrl('zzz'), null);
+});
+
 test('refresh drops deleted photos and finds new ones', async () => {
   const { graph, source } = setup();
   const { data } = await source.load();
@@ -190,6 +199,7 @@ test('addPhotos uploads each photo, shrunk, into its folder and adds it to be la
   // OneDrive makes its preview a little later; until then the photo shows from the phone.
   assert.equal(source.photoUrl('up1'), 'local-url-1');
   assert.equal(source.photoUrl('up2'), 'local-url-2');
+  assert.equal(source.bigPhotoUrl('up1'), 'local-url-1');
 });
 
 test('addPhotos keeps going after a failed upload and counts it', async () => {
@@ -242,6 +252,7 @@ test('sample mode can move and delete pieces but not add photos', async () => {
   const source = createSampleSource({ storage: fakeStorage(), today });
   const { data } = await source.load();
   assert.equal(source.canAdd, false);
+  assert.equal(source.bigPhotoUrl('sample-01'), source.photoUrl('sample-01'), 'drawings are sharp at any size');
   await source.movePiece(data, 'sample-01', 'sweatshirts');
   assert.equal(data.items['sample-01'].category, 'sweatshirts');
   await source.deletePiece(data, 'sample-02');

@@ -57,7 +57,7 @@ function dayOutfits(view, actions) {
 function bigWorn(view, actions) {
   const outfit = view.outfits[view.zoomed];
   if (!outfit?.ids.length) return null;
-  return bigOutfit(outfit.ids.map((id) => ({ url: view.photoUrl(id), fileName: view.fileName(id) })), {
+  return bigOutfit(outfit.ids.map((id) => ({ url: view.photoUrl(id), bigUrl: view.bigPhotoUrl(id), fileName: view.fileName(id) })), {
     top: h('h2', {}, outfitTitle(view, outfit)),
     opening: view.zoomOpening,
     onClose: actions.closeZoom,

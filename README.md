@@ -147,7 +147,7 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
   pieces, no sign-in needed, so you can try the rules. It comes with a made-up month of
   choices (pink with black, casual pants outfits, dresses for evenings out), so
   **Wardrobe → Your style so far** shows something and the picks lean that way, and
-  **Wardrobe → 📅 Outfit calendar** has a few weeks of outfits. Tap **Exit** to leave.
+  **Wardrobe → 📅 Calendar** has a few weeks of outfits. Tap **Exit** to leave.
 - **Your own account:** tap **Sign in with Microsoft** and sign in with your own Microsoft
   account. The app creates `Wardrobe` and its 11 folders in *your* OneDrive. Add a few
   photos with **Wardrobe → Add clothes** (or save them into the folders and tap **Refresh**),
@@ -226,9 +226,15 @@ to check that it's learning.
 
 ## Outfit calendar
 
-**Wardrobe → 📅 Outfit calendar** shows what she wore, a month at a time. Every day she tapped
+**Wardrobe → 📅 Calendar** shows what she wore, a month at a time. Every day she tapped
 **Wore this** has a dot; tapping a day shows that outfit with its occasion. It reads the same
 diary, so it goes back as far as her latest 800 Wore this (about two years).
+
+## Wardrobe stats
+
+**Wardrobe → 📊 Stats** shows her wardrobe in numbers: how many pieces, outfits worn, outfits
+worn this month and pieces never worn, then her 3 most-worn pieces, her color mix and what she
+dresses for (the occasion she picked for each Wore this).
 
 ## Easter eggs
 

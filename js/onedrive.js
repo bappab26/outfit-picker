@@ -69,7 +69,10 @@ export function createGraph({ getToken, fetchFn = (...args) => fetch(...args), i
       const page = await res.json();
       for (const item of page.value ?? []) {
         if (!item.file?.mimeType?.startsWith('image/')) continue;
-        entries.push({ id: item.id, category, fileName: item.name, thumbUrl: item.thumbnails?.[0]?.medium?.url ?? null });
+        // The medium preview (about 176px) for tiles and color detection, the large one (about
+        // 800px) for photos shown big.
+        const [thumbnail] = item.thumbnails ?? [];
+        entries.push({ id: item.id, category, fileName: item.name, thumbUrl: thumbnail?.medium?.url ?? null, bigUrl: thumbnail?.large?.url ?? null });
       }
       next = page['@odata.nextLink'];
     }
@@ -112,7 +115,7 @@ export function createGraph({ getToken, fetchFn = (...args) => fetch(...args), i
       const path = `${wardrobe}/${encodeURIComponent(folderOf(category))}/${encodeURIComponent(fileName)}`;
       const res = await graph('PUT', `${path}:/content?@microsoft.graph.conflictBehavior=rename`, { body: blob, contentType: 'image/jpeg' });
       const item = await res.json();
-      return { id: item.id, category, fileName: item.name, thumbUrl: null };
+      return { id: item.id, category, fileName: item.name, thumbUrl: null, bigUrl: null };
     },
 
     // Moves a photo into the Wardrobe folder for `category`; its id stays the same.

@@ -87,7 +87,7 @@ function cardButtons({ liked, worn }, i, actions) {
 
 // A card's outfit, big, with the same buttons.
 function bigCard(c, i, view, actions) {
-  return bigOutfit(c.outfit.items.map((item) => ({ url: view.photoUrl(item.id), fileName: item.fileName })), {
+  return bigOutfit(c.outfit.items.map((item) => ({ url: view.photoUrl(item.id), bigUrl: view.bigPhotoUrl(item.id), fileName: item.fileName })), {
     top: [c.rare && rareTag(), c.forgotten && forgottenTag()],
     after: cardButtons(c, i, actions),
     opening: view.zoomOpening,

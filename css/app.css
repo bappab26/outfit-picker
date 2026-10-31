@@ -307,7 +307,22 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 
 /* Adding clothes */
 .add-clothes { display: block; width: 100%; margin: 0 0 12px; }
-.calendar-link { display: block; width: 100%; }
+.wardrobe-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* Wardrobe stats (ui/stats.js) */
+.stat-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.stat-tile { padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.stat-number { display: block; font-size: 26px; font-weight: 700; line-height: 1.15; }
+.stat-label { color: var(--muted); font-size: 14px; }
+.stats-card h2 { font-size: 16px; margin: 0 0 8px; }
+.stats-card .hint { margin: 0; }
+.stats-card figcaption { margin-top: 4px; font-size: 13px; color: var(--muted); text-align: center; }
+.color-bar { display: flex; height: 14px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; }
+.color-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 14px; }
+.color-legend li { display: flex; align-items: center; gap: 6px; }
+.occasion-row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 2em; align-items: center; gap: 8px; margin: 6px 0; font-size: 14px; }
+.occasion-bar { height: 10px; border-radius: 5px; background: var(--accent); }
+.occasion-count { color: var(--muted); text-align: right; }
 
 /* Outfit calendar (ui/worn.js), on a plain panel over the leopard print. No gap between the
    days and little padding, so they're as wide as they can be on a 320px screen (40px; 44px

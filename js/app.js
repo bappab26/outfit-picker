@@ -18,9 +18,11 @@ import { INTRO_MAX_MS, pickIntro, playIntro, spotOf } from './ui/intro.js';
 import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
 import { confetti, toast } from './ui/party.js';
+import { renderStats } from './ui/stats.js';
 import { renderWardrobe } from './ui/wardrobe.js';
 import { renderWorn } from './ui/worn.js';
 import { addMonths, firstMonth, lastWornDay, outfitsOn, wornDays } from './worn.js';
+import { wardrobeStats } from './stats.js';
 
 const MODE_KEY = 'outfit-picker:mode';
 // The email she signed in with, so being signed out (Microsoft's sign-in library forgets her
@@ -480,6 +482,13 @@ const wardrobeActions = {
     showMonth((lastWornDay(state.data, today) ?? today).slice(0, 7));
     show('worn');
   },
+  openStats() {
+    show('stats');
+  },
+};
+
+const statsActions = {
+  back: () => show('wardrobe'),
 };
 
 // ----- Outfit calendar -----
@@ -632,6 +641,7 @@ function renderHomeScreen() {
     notes: state.notes,
     newCount: unlabeledIds(state.data).length,
     photoUrl: (id) => state.source.photoUrl(id),
+    bigPhotoUrl: (id) => state.source.bigPhotoUrl(id),
     fileName: (id) => state.data.items[id]?.fileName ?? '',
     sampleMode: state.source.mode === 'sample',
     saveError: state.saveError,
@@ -656,6 +666,7 @@ function renderLabelScreen() {
   renderLabel(screenRoot, {
     item: { id, ...state.data.items[id] },
     photoUrl: state.source.photoUrl(id),
+    bigPhotoUrl: state.source.bigPhotoUrl(id),
     mode: state.label.mode,
     remaining: state.label.queue.length - state.label.index,
     sampleMode: state.source.mode === 'sample',
@@ -695,8 +706,17 @@ function renderWornScreen() {
     canGoBack: Boolean(first) && month > first,
     canGoForward: month < today.slice(0, 7),
     photoUrl: (id) => state.source.photoUrl(id),
+    bigPhotoUrl: (id) => state.source.bigPhotoUrl(id),
     fileName: (id) => state.data.items[id]?.fileName ?? '',
   }, calendarActions);
+}
+
+function renderStatsScreen() {
+  renderStats(screenRoot, {
+    stats: wardrobeStats(state.data, todayISO()),
+    photoUrl: (id) => state.source.photoUrl(id),
+    fileName: (id) => state.data.items[id]?.fileName ?? '',
+  }, statsActions);
 }
 
 // The opening screens stay clean: just the name and what to do.
@@ -710,6 +730,7 @@ const SCREENS = {
   label: renderLabelScreen,
   wardrobe: renderWardrobeScreen,
   worn: renderWornScreen,
+  stats: renderStatsScreen,
 };
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.

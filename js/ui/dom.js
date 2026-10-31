@@ -52,6 +52,23 @@ export function photo(url, fileName) {
   return img;
 }
 
+// Sharp photos that have loaded once, so a screen drawn again shows them straight away.
+const sharpLoaded = new Set();
+
+// A photo shown big: the small one at once (usually already loaded), then the sharp one as
+// soon as it has loaded, so nothing waits.
+export function sharpPhoto(url, sharpUrl, fileName) {
+  if (!url || !sharpUrl || sharpUrl === url || sharpLoaded.has(sharpUrl)) return photo(sharpUrl ?? url, fileName);
+  const img = photo(url, fileName);
+  const sharp = new Image();
+  sharp.addEventListener('load', () => {
+    sharpLoaded.add(sharpUrl);
+    img.src = sharpUrl;
+  });
+  sharp.src = sharpUrl;
+  return img;
+}
+
 // Attributes that make a box work as one button: a tap, Enter or Space calls `onTap`.
 export function tapAttrs(onTap, label) {
   return {
@@ -67,13 +84,14 @@ export function tapAttrs(onTap, label) {
   };
 }
 
-// One outfit, big, over a darkened screen: `pieces` are { url, fileName }, `top` sits beside
-// the × and `after` under the photos. × or a tap on the dark area closes it (Esc too, in app.js).
+// One outfit, big, over a darkened screen: `pieces` are { url, bigUrl, fileName }, `top` sits
+// beside the × and `after` under the photos. × or a tap on the dark area closes it (Esc too, in
+// app.js).
 export function bigOutfit(pieces, { top, after, opening, onClose }) {
   const close = h('button', { class: 'icon zoom-close', 'aria-label': 'Close', onclick: onClose }, '×');
   const panel = h('div', { class: 'zoom-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Outfit' },
     h('div', { class: 'zoom-top' }, top, close),
-    h('div', { class: 'zoom-pieces' }, pieces.map(({ url, fileName }) => h('figure', { class: 'piece' }, photo(url, fileName)))),
+    h('div', { class: 'zoom-pieces' }, pieces.map(({ url, bigUrl, fileName }) => h('figure', { class: 'piece' }, sharpPhoto(url, bigUrl, fileName)))),
     after);
   const backdrop = h('div', { class: opening ? 'zoom opening' : 'zoom' }, panel);
   backdrop.addEventListener('click', (event) => {
