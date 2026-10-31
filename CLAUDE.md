@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# lil evil wardrobe
+# lil evil
 
 A free phone web app that reads clothing photos from OneDrive and suggests outfits with plain
 rules (no AI, no paid services). It's live on GitHub Pages and a friend of the owner uses it.

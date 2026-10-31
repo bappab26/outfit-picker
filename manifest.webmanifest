@@ -1,6 +1,6 @@
 {
-  "name": "lil evil wardrobe",
-  "short_name": "lil evil wardrobe",
+  "name": "lil evil",
+  "short_name": "lil evil",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

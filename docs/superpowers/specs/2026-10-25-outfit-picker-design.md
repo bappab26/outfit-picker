@@ -1,4 +1,4 @@
-# lil evil wardrobe (first called Outfit Picker) — Design Spec
+# lil evil (first called Outfit Picker, then lil evil wardrobe) — Design Spec
 
 Date: 2026-10-25
 Status: Draft, waiting for review
@@ -75,9 +75,9 @@ and a French interface (the interface is English).
 
 ### Home screen: outfits
 
-- The app's name at the top, "lil evil wardrobe" until she renames it: tapping the name
-  (with its ✎) opens a box to type a new one. It is saved with her data and also shows in
-  the browser tab. An empty name goes back to "lil evil wardrobe".
+- The app's name at the top, "lil evil" until she renames it: tapping the name (with its ✎)
+  opens a box to type a new one. It is saved with her data and also shows in the browser
+  tab. An empty name goes back to "lil evil".
 - Coming from the opening screen (sign-in or "Loading your wardrobe…", where the name is
   36 px, on the left, halfway down), the name moves up to its place at the top (22 px) with
   one of 7 animations, picked at random and never the same twice in a row (the phone
@@ -201,11 +201,6 @@ Little hidden surprises, none of which gets in the way of picking outfits. The r
 - **Angel look:** a name for the app with "angel" in it (any case) turns every screen pastel
   (light lilac background, dark text, soft lilac leopard spots) with a gold halo over the name,
   and the phone's top bar light. It wins over evil mode: the 6 taps then only say "Angels can't go evil 😇".
-- **Secret card:** holding the version line for 0.8 seconds opens a card whose title is a note
-  from bap bap, "Built with zero fashion sense by bap bap 🖤" (stored scrambled in the code, so
-  it can't be read at a glance or found by a search), then her stats: pieces, outfits worn, her most-worn piece (photo and count), her favorite
-  color (the color she has worn most) and the day her wardrobe started (the earliest piece).
-  Lines with nothing to show yet are left out. × or a tap on the dark area closes it.
 - **Rare find:** each outfit card has a 1 in 150 chance of a gold edge, a shimmer and a
   "✨ Rare find" tag. It only changes the look.
 - **"Why do you even own this?":** after a 👎, if a piece of that outfit has now been in 5
