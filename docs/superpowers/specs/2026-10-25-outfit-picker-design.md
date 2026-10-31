@@ -108,9 +108,9 @@ and a French interface (the interface is English).
   - **Wore this** records today's date on every piece. The button changes to "Worn today ✓";
     tapping it again takes it back and restores the earlier dates.
   - Undo works while the cards are on screen; it is not kept after the app closes.
-- Tapping a card's photos shows that outfit **big**, over the darkened screen: its photos two
-  per row, its Not worn in a while tag, and the same 👍 / 👎 / Wore this buttons (👎 closes it
-  and swaps the card). **×**, a tap on the dark area, or Esc closes it. The page behind stays still.
+- Tapping a piece's photo on a card shows that piece **big**, on its own, over the darkened
+  screen (the whole outfit used to open big; one piece is easier to look at). **×**, a tap on
+  the dark area, or Esc closes it. The page behind stays still.
 - **Shuffle** replaces all 3 cards with 3 new ones.
 - At the bottom of every screen except the opening ones (sign-in, loading and error, kept
   clean): "<number> · by bap bap", for example "1.17 · by bap bap". The number after "1." goes
@@ -167,8 +167,8 @@ What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `
   occasion and photos of the pieces ("Fri, Oct 30 · Work"). The same outfit twice on one day
   shows once. Pieces deleted since are left out ("These pieces are no longer in your
   wardrobe." when none are left). A day with nothing says "Nothing saved for this day."
-- Tapping an outfit shows it big, like a home-screen card: its date and occasion, the photos
-  two per row, and no buttons, since that day is over. **×**, a tap on the dark area, or Esc
+- Tapping an outfit shows the whole outfit big: its date and occasion, the photos two per
+  row, and no buttons, since that day is over. **×**, a tap on the dark area, or Esc
   closes it.
 - It reads the diary's Wore this lines (§4.5), so nothing new is saved. The diary keeps her
   latest 800 Wore this, about two years. Undo on Wore this takes it off the calendar too.
@@ -402,9 +402,9 @@ On each app open (and when she taps **Refresh** on the Wardrobe screen):
    thumbnails, following paging links.
 3. Show photos using the **medium thumbnail** (about 176px), not the full photo. This keeps
    it fast and also handles iPhone HEIC photos, since OneDrive's thumbnails are regular
-   images. Photos shown big (an outfit opened big, the labeling screen) use the **large
-   thumbnail** (about 800px) from the same listing: the medium one shows at once and the
-   large one replaces it when it has loaded (`sharpPhoto` in `js/ui/dom.js`).
+   images. Photos shown big (a piece or a calendar outfit opened big, the labeling screen)
+   use the **large thumbnail** (about 800px) from the same listing: the medium one shows at
+   once and the large one replaces it when it has loaded (`sharpPhoto` in `js/ui/dom.js`).
 4. Compare with the saved data (see 4.5):
    - **New photo:** added as unlabeled, with its detected color.
    - **Photo moved to another subfolder:** its type updates; its labels are kept.
