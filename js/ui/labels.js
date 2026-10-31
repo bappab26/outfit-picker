@@ -4,13 +4,18 @@
 export const DEFAULT_NAME = 'lil evil';
 // This version's number: raise it with every update (see README, "Put it online"). The number
 // after "1." is the one in CACHE_NAME in sw.js.
-export const VERSION_NUMBER = '1.26';
+export const VERSION_NUMBER = '1.27';
 export const VERSION_LINE = `${VERSION_NUMBER} · by bap bap`;
 
 export const OCCASION_LABELS = { everyday: 'Everyday', work: 'Work', evening: 'Evening out', special: 'Special event', home: 'At home' };
 export const TEMPERATURE_LABELS = { cold: 'Cold', mild: 'Mild', hot: 'Hot' };
 export const WARMTH_LABELS = { light: 'Light', medium: 'Medium', warm: 'Warm' };
 export const STYLE_LABELS = { cozy: 'Cozy', casual: 'Casual', smart: 'Smart', dressy: 'Dressy' };
+// One piece of each type, as the shop check asks "What is it?".
+export const TYPE_LABELS = {
+  tops: 'Top', hoodies: 'Hoodie', sweatshirts: 'Sweatshirt', pants: 'Pants', jeans: 'Jeans', shorts: 'Shorts',
+  skirts: 'Skirt', dresses: 'Dress', shoes: 'Shoes', jackets: 'Jacket', coats: 'Coat',
+};
 export const SHAPE_LABELS = { dress: 'dresses', skirt: 'skirts', pants: 'pants', shorts: 'shorts' };
 export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December'];
