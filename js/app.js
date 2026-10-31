@@ -12,6 +12,7 @@ import { pickOutfits } from './rules.js';
 import { createShopChecks, readyToCheck } from './shop.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, tidyNote, unlabeledIds, updateWishlistItem } from './store.js';
+import { watchSwipes } from './swipe.js';
 import { append, clear, h } from './ui/dom.js';
 import { versionLine } from './ui/eggs.js';
 import { renderHome } from './ui/home.js';
@@ -876,6 +877,25 @@ const SCREENS = {
   stats: renderStatsScreen,
   shop: renderShopScreen,
 };
+
+// Swiping right does what Back does (swipe.js), on the screens that have it, but never while a
+// big photo is open. The screen follows her finger, and slides back if she lets go too soon.
+const BACKS = { label: labelActions, wardrobe: wardrobeActions, worn: calendarActions, stats: statsActions, shop: shopActions };
+watchSwipes(root, {
+  backAction: () => (root.querySelector('.zoom-panel') ? null : BACKS[state.screen]?.back ?? null),
+  width: () => root.clientWidth,
+  drag(px) {
+    root.classList.remove('swipe-return');
+    document.body.classList.add('swiping');
+    root.style.transform = `translateX(${px}px)`;
+    getSelection()?.removeAllRanges(); // a mouse drag would select text
+  },
+  release(wentBack) {
+    document.body.classList.remove('swiping');
+    root.classList.toggle('swipe-return', !wentBack);
+    root.style.transform = '';
+  },
+});
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
 function applyTheme() {

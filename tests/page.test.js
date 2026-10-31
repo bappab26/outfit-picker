@@ -9,7 +9,8 @@ test('the page turns off zooming', () => {
   const viewport = read('index.html').match(/<meta name="viewport" content="([^"]+)"/)[1];
   assert.match(viewport, /maximum-scale=1/);
   assert.match(viewport, /user-scalable=no/);
-  assert.match(read('css/app.css'), /touch-action: manipulation/);
+  // Up-and-down scrolling only: no double-tap or pinch zoom, and sideways swipes go back.
+  assert.match(read('css/app.css'), /html \{[^}]*touch-action: pan-y;/);
 });
 
 test('the page, the home-screen icon and the app start with the same name', () => {

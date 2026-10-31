@@ -19,6 +19,9 @@ Of the three outfits, the last one always has a piece she hasn't worn in 30 days
 to take them back; after a 👎, **Undo 👎** brings the outfit back. Tapping a piece shows it
 big, on its own; **×**, a tap outside it, or Esc closes it.
 
+Every screen with a **Back** button also goes back with a swipe to the right, anywhere on the
+screen (not while a big photo is open). On a computer, a mouse drag does the same.
+
 Clothes can be added from the app (**Wardrobe → Add clothes**: pick a folder, then take or
 choose photos) or by saving photos into the OneDrive folders. Tapping a piece in Wardrobe
 lets her move it to another folder or delete it.
