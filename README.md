@@ -239,6 +239,19 @@ diary, so it goes back as far as her latest 800 Wore this (about two years).
 worn this month and pieces never worn, then her 3 most-worn pieces, her color mix and what she
 dresses for (the occasion she picked for each Wore this).
 
+## Shop check and wishlist
+
+**Wardrobe → 🛍️ Shop check → Check a piece**: in a store, she takes a photo of something she
+might buy. The app reads its color (she can change it); she picks what it is and its style, and
+it says how many outfits it would make with her clothes ("Goes with 14 outfits") and shows the
+best three. Checking needs no connection and saves nothing.
+
+**Save to wishlist** keeps it: the photo goes to a `Wishlist` folder next to `Wardrobe` in her
+OneDrive. Each wishlist item shows its number, which follows her wardrobe as it changes. Tapping
+one opens it with **I bought it** (the photo moves into the right Wardrobe folder, already
+labeled) and **Remove** (the photo goes to the OneDrive recycle bin). In sample mode the check
+works but there's no wishlist, since its photos live in OneDrive.
+
 ## Easter eggs
 
 Hidden surprises for her to find (don't spoil them):
