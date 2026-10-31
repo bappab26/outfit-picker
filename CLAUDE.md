@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # lil evil wardrobe
 
 A free phone web app that reads clothing photos from OneDrive and suggests outfits with plain
@@ -9,6 +13,54 @@ rules (no AI, no paid services). It's live on GitHub Pages and a friend of the o
   of date (it lists 6 clothing folders; there are now 11). Trust the README and spec over it.
 - `docs/superpowers/probe-results.md`: phone test results and the sign-in/photo settings
   they decided.
+
+## Commands
+
+- `npm test`: all tests (`node --test`, Node 24, nothing to install).
+- `node --test tests/rules-pick.test.js`: one file. Add `--test-name-pattern="<text>"` to run
+  only the tests whose names match.
+- `npm run serve`: local server at `http://localhost:8080/`. Microsoft sign-in only works on
+  this port, because that address is registered. **Try with sample clothes** needs no sign-in.
+- `node scripts/make-icons.mjs`: redraws `icons/` from `scripts/logo-source.png`.
+- `tools/probe.html`: a separate page that tests phone sign-in and photo reading. It isn't
+  part of the app and isn't in `APP_FILES`.
+
+There is no lint or build step.
+
+## How the code fits together
+
+- `js/app.js` holds the app's state and controls the screens: one `state` object,
+  `show(screen)` to switch screens, and `render()`, which clears `#app` and redraws the
+  current screen after every change. Each screen in `js/ui/` is a function
+  `renderX(root, view, actions)` that builds elements with `h()` from `js/ui/dom.js`. It
+  changes nothing itself: every tap calls an action in `app.js`, which updates `state` and
+  calls `render()` again.
+- `js/sources.js` lets the same app code run on two **sources**: OneDrive (`onedrive.js`
+  for the Graph calls, `auth.js` for MSAL sign-in) or the built-in sample (`sample.js`,
+  saved in `localStorage`). Both provide `load`, `refresh`, `photoUrl`, `save`, `movePiece`
+  and `deletePiece`; only OneDrive provides `addPhotos` (`canAdd`). Data that hasn't reached
+  OneDrive yet stays in `localStorage` under `outfit-picker:pending`.
+- `js/store.js` owns the shape of `data.json` (spec §4.5). It parses and checks the file,
+  merges it with the OneDrive photo list (new, moved and deleted photos), trims the diary,
+  and saves about 1 second after each change (`createSaver`).
+- How outfits are picked: `rules.js` builds every possible outfit, removes the ones that
+  don't fit, scores the rest and picks 3. Color points come from `colors.js`, and the nudge
+  from her learned habits comes from `habits.js`, which reads the diary. `feedback.js`
+  applies 👍/👎/Wore this (and their undo) to the data, and `keys.js` makes the sorted
+  `id|id` keys.
+- `eggs.js` decides the Easter eggs; `ui/eggs.js` draws them. Don't spoil them in interface
+  text.
+- **Pure modules:** the rule, store, sample, source and OneDrive modules (the full list is in
+  the plan's "Global Constraints") take the date, randomness, `storage`, `graph` and the
+  browser's photo functions as parameters. The tests rely on this, with fake versions built
+  in `tests/helpers.js`. Keep browser objects out of these modules' top-level code.
+- Some tests read the source files as text. `page.test.js` checks the viewport and the
+  version line, `sw.test.js` checks `APP_FILES` and the MSAL version, and `icons.test.js`
+  checks the icons. Changing that markup or the MSAL version (`index.html` and `sw.js`
+  together) can make them fail.
+- The browser's own storage (`localStorage`) keys all start with `outfit-picker:` and are
+  listed at the top of `app.js` and `sources.js`. `SAMPLE_KEY` has a number; raise it when
+  the sample's data shape changes, so old saved samples get replaced.
 
 ## Never push to `main`
 
