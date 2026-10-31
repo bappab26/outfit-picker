@@ -9,8 +9,9 @@ import { learnHabits, styleSummary } from './habits.js';
 import { createGraph, GraphError } from './onedrive.js';
 import { photoFileName, shrinkPhoto } from './photos.js';
 import { pickOutfits } from './rules.js';
+import { createShopChecks, readyToCheck } from './shop.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
-import { allItems, createSaver, labeledItems, tidyName, tidyNote, unlabeledIds } from './store.js';
+import { allItems, createSaver, labeledItems, tidyName, tidyNote, unlabeledIds, updateWishlistItem } from './store.js';
 import { append, clear, h } from './ui/dom.js';
 import { versionLine } from './ui/eggs.js';
 import { renderHome } from './ui/home.js';
@@ -18,6 +19,7 @@ import { INTRO_MAX_MS, pickIntro, playIntro, spotOf } from './ui/intro.js';
 import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
 import { confetti, toast } from './ui/party.js';
+import { renderShop } from './ui/shop.js';
 import { renderStats } from './ui/stats.js';
 import { renderWardrobe } from './ui/wardrobe.js';
 import { renderWorn } from './ui/worn.js';
@@ -96,6 +98,11 @@ const state = {
   note: null,
   // Wardrobe screen: what she searched for and how the pieces are sorted (find.js).
   wardrobe: { query: '', sort: 'folder' },
+  // Shop check: the piece being checked ({ photo, blob, color, category, style, warmth, wishId },
+  // or null), and whether "Remove from your wishlist?" is asked.
+  shop: { check: null, confirmRemove: false },
+  // The checks worked out during this visit to the Shop check screen (createShopChecks), or null.
+  shopChecks: null,
   // Outfit calendar: the month shown ('YYYY-MM'), the day picked and the outfit of that day
   // shown big (its index), or null.
   worn: { month: null, day: null, zoomed: null },
@@ -493,10 +500,114 @@ const wardrobeActions = {
     state.wardrobe.sort = sort;
     render();
   },
+  openShop() {
+    endCheck();
+    state.shopChecks = null;
+    show('shop');
+  },
 };
 
 const statsActions = {
   back: () => show('wardrobe'),
+};
+
+// ----- Shop check -----
+
+// Ends the check, releasing its photo when it came from the phone (a wishlist item's is OneDrive's).
+function endCheck() {
+  const { check } = state.shop;
+  if (check?.blob) URL.revokeObjectURL(check.photo);
+  state.shop = { check: null, confirmRemove: false };
+}
+
+// A change to the check; a wishlist item's labels are saved too.
+function setCheck(field, value) {
+  const { check } = state.shop;
+  check[field] = value;
+  if (check.wishId) {
+    updateWishlistItem(state.data, check.wishId, check);
+    changed();
+  }
+  render();
+}
+
+const shopActions = {
+  back() {
+    endCheck();
+    show('wardrobe');
+  },
+  async pickPhoto(file) {
+    if (state.busy) return; // a check is being saved: it stays until that's done
+    endCheck();
+    let color = null;
+    try {
+      color = await detectImageColor(file);
+    } catch {
+      /* a photo the browser can't read: she picks the color */
+    }
+    state.shop.check = { photo: URL.createObjectURL(file), blob: file, color, category: null, style: null, warmth: 'medium', wishId: null };
+    render();
+  },
+  setColor: (color) => setCheck('color', color),
+  setCategory: (category) => setCheck('category', category),
+  setStyle: (style) => setCheck('style', style),
+  setWarmth: (warmth) => setCheck('warmth', warmth),
+  done() {
+    if (state.busy) return;
+    endCheck();
+    render();
+    window.scrollTo(0, 0);
+  },
+  openWish(id) {
+    const item = state.data.wishlist.find((w) => w.id === id);
+    if (!item) return;
+    const { category, color, warmth, style } = item;
+    state.shop = { check: { photo: state.source.bigPhotoUrl(id), blob: null, color, category, style, warmth, wishId: id }, confirmRemove: false };
+    render();
+    window.scrollTo(0, 0);
+  },
+  // These three talk to OneDrive; a second tap while one runs does nothing. On failure the
+  // check stays, with a note. On success they end the check they started from, and only that
+  // one (she may have left and come back).
+  async save() {
+    const { check } = state.shop;
+    if (state.busy || !check || !readyToCheck(check)) return;
+    if (await busyChange('Saving…', () => state.source.saveToWishlist(state.data, check.blob, check))) {
+      changed();
+      if (state.shop.check === check) endCheck();
+    }
+    if (state.screen === 'shop') render();
+  },
+  async buy() {
+    const { check } = state.shop;
+    if (state.busy || !check?.wishId) return;
+    if (await busyChange('Moving…', () => state.source.buyWishlistItem(state.data, check.wishId))) {
+      changed();
+      state.shopChecks = null; // a new piece in her wardrobe: the other items' numbers change
+      if (state.shop.check === check) endCheck();
+      toast('Added to your wardrobe 🎉');
+    }
+    if (state.screen === 'shop') render();
+  },
+  askRemove() {
+    state.shop.confirmRemove = true;
+    render();
+  },
+  cancelRemove() {
+    state.shop.confirmRemove = false;
+    render();
+  },
+  async confirmRemove() {
+    const { check } = state.shop;
+    if (state.busy || !check?.wishId) return;
+    if (await busyChange('Removing…', () => state.source.removeWishlistItem(state.data, check.wishId))) {
+      changed();
+      if (state.shop.check === check) endCheck();
+    } else if (state.shop.check === check) {
+      state.shop.confirmRemove = false;
+    }
+    if (state.screen === 'shop') render();
+  },
 };
 
 // ----- Outfit calendar -----
@@ -720,6 +831,29 @@ function renderWornScreen() {
   }, calendarActions);
 }
 
+function renderShopScreen() {
+  const items = labeledItems(state.data);
+  if (!state.shopChecks) {
+    const today = todayISO();
+    state.shopChecks = createShopChecks(items, state.data, { today, habits: learnHabits(state.data, today) });
+  }
+  const check = state.shopChecks;
+  const { check: open, confirmRemove } = state.shop;
+  const canWishlist = Boolean(state.source.canWishlist);
+  renderShop(screenRoot, {
+    check: open,
+    result: open && items.length && readyToCheck(open) ? check(open) : null,
+    // Newest first; their counts only matter while the list shows.
+    wishlist: !open && canWishlist ? [...state.data.wishlist].reverse().map((w) => ({ id: w.id, labels: w, count: check(w).count })) : [],
+    canWishlist,
+    hasLabeled: items.length > 0,
+    photoUrl: (id) => state.source.photoUrl(id),
+    busy: state.busy,
+    note: state.note,
+    confirmRemove,
+  }, shopActions);
+}
+
 function renderStatsScreen() {
   renderStats(screenRoot, {
     stats: wardrobeStats(state.data, todayISO()),
@@ -740,6 +874,7 @@ const SCREENS = {
   wardrobe: renderWardrobeScreen,
   worn: renderWornScreen,
   stats: renderStatsScreen,
+  shop: renderShopScreen,
 };
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.

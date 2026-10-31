@@ -127,7 +127,8 @@ export function renderWardrobe(root, view, actions) {
     !view.items.length && h('p', { class: 'hint' }, 'No pieces yet.'),
     h('div', { class: 'wardrobe-links' },
       h('button', { onclick: actions.openCalendar }, '📅 Calendar'),
-      h('button', { onclick: actions.openStats }, '📊 Stats')),
+      h('button', { onclick: actions.openStats }, '📊 Stats'),
+      h('button', { class: 'wide', onclick: actions.openShop }, '🛍️ Shop check')),
     view.style && styleBox(view.style),
     view.items.length > 0 && [
       searchBox(view, search),

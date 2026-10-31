@@ -191,3 +191,29 @@ test('deletePhoto fails when OneDrive cannot be reached', async () => {
   const graph = createGraph({ getToken: async () => 't', fetchFn: async () => { throw new TypeError('Failed to fetch'); } });
   await assert.rejects(graph.deletePhoto('p1'), (e) => e instanceof GraphError && e.status === 0);
 });
+
+test('listWishlist lists the Wishlist folder with both previews', async () => {
+  const { graph, requests } = graphWith([[(r) => r.url.includes('/Wishlist:/children'), () => json({ value: [image('w1')] })]]);
+  assert.deepEqual(await graph.listWishlist(), [{ id: 'w1', fileName: 'w1.jpg', thumbUrl: 'https://thumbs.example/w1', bigUrl: 'https://big.example/w1' }]);
+  assert.equal(requests[0].url, `${G}/me/drive/root:/Wishlist:/children?$expand=thumbnails&$top=200`);
+});
+
+test('listWishlist gives nothing when the folder is missing', async () => {
+  const { graph } = graphWith([]);
+  assert.deepEqual(await graph.listWishlist(), []);
+});
+
+test('uploadToWishlist makes the folder, then saves the photo without overwriting', async () => {
+  const { graph, requests } = graphWith([
+    [isPost, () => new Response('exists', { status: 409 })],
+    [(r) => r.method === 'PUT', () => json({ id: 'w9', name: 'photo (2).jpg' }, 201)],
+  ]);
+  const blob = new Blob(['jpeg bytes'], { type: 'image/jpeg' });
+  assert.deepEqual(await graph.uploadToWishlist('photo.jpg', blob), { id: 'w9', fileName: 'photo (2).jpg', thumbUrl: null, bigUrl: null });
+  const post = requests.find(isPost);
+  assert.equal(post.url, `${G}/me/drive/root/children`);
+  assert.equal(JSON.parse(post.body).name, 'Wishlist');
+  const put = requests.find((r) => r.method === 'PUT');
+  assert.equal(put.url, `${G}/me/drive/root:/Wishlist/photo.jpg:/content?@microsoft.graph.conflictBehavior=rename`);
+  assert.equal(put.body, blob);
+});

@@ -36,20 +36,28 @@ function noteBox(item, actions) {
   return h('div', { class: 'group' }, h('div', { class: 'group-label' }, 'Note'), input);
 }
 
-export function renderLabel(root, view, actions) {
-  const { item, mode } = view;
-
-  // The full color list opens from the current color; it starts open when no color was detected.
-  const grid = h('div', { class: 'color-grid', hidden: Boolean(item.color) },
+// The color, and the full color list that opens from it; the list starts open when no color
+// was detected. The shop check uses it too.
+export function colorChoice(color, onPick) {
+  const grid = h('div', { class: 'color-grid', hidden: Boolean(color) },
     COLORS.map((c) => h('button', {
       class: 'color-option',
-      'aria-pressed': c === item.color ? 'true' : 'false',
-      onclick: () => actions.setColor(c),
+      'aria-pressed': c === color ? 'true' : 'false',
+      onclick: () => onPick(c),
     }, swatch(SWATCHES[c]), colorLabel(c))));
   const toggleGrid = (event) => {
     grid.hidden = !grid.hidden;
     event.currentTarget.setAttribute('aria-expanded', String(!grid.hidden));
   };
+  return h('div', { class: 'group' },
+    h('div', { class: 'group-label' }, 'Color'),
+    h('button', { class: 'color-current', 'aria-expanded': String(!grid.hidden), onclick: toggleGrid },
+      color ? [swatch(SWATCHES[color]), colorLabel(color)] : 'Pick a color'),
+    grid);
+}
+
+export function renderLabel(root, view, actions) {
+  const { item, mode } = view;
 
   append(root,
     h('header', { class: 'topbar' },
@@ -57,11 +65,7 @@ export function renderLabel(root, view, actions) {
       h('h1', {}, mode === 'new' ? `New piece (${view.remaining} left)` : 'Edit piece'),
       h('span', { class: 'topbar-spacer' })),
     h('div', { class: 'label-photo' }, sharpPhoto(view.photoUrl, view.bigPhotoUrl, item.fileName)),
-    h('div', { class: 'group' },
-      h('div', { class: 'group-label' }, 'Color'),
-      h('button', { class: 'color-current', 'aria-expanded': String(!grid.hidden), onclick: toggleGrid },
-        item.color ? [swatch(SWATCHES[item.color]), colorLabel(item.color)] : 'Pick a color'),
-      grid),
+    colorChoice(item.color, actions.setColor),
     choices('Warmth', WARMTHS, WARMTH_LABELS, item.warmth, actions.setWarmth),
     h('p', { class: 'hint warmth-hint' }, warmthHint(item.category)),
     choices('Style', STYLES, STYLE_LABELS, item.style, actions.setStyle),

@@ -309,6 +309,35 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 /* Adding clothes */
 .add-clothes { display: block; width: 100%; margin: 0 0 12px; }
 .wardrobe-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.wardrobe-links .wide { grid-column: 1 / -1; }
+
+/* Shop check (ui/shop.js) */
+.photo-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.photo-pick:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+.photo-pick.waiting, label.chip.waiting { opacity: 0.5; cursor: default; }
+.shop-photo-row { display: flex; align-items: flex-end; gap: 12px; margin: 12px 0 16px; }
+.shop-photo { flex: none; width: 120px; }
+.shop-result h2 { margin: 0 0 2px; font-size: 18px; }
+.shop-result .hint { margin: 0 0 10px; }
+.shop-outfit { margin-top: 8px; }
+.shop-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.shop-actions .danger-link { margin-right: auto; }
+.wish-card { display: flex; align-items: center; gap: 12px; }
+.wish-photo { flex: none; width: 64px; }
+.wish-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wish-count { font-size: 14px; color: var(--accent); }
 
 /* Wardrobe stats (ui/stats.js) */
 .stat-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }

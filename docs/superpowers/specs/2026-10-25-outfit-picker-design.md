@@ -145,7 +145,9 @@ and a French interface (the interface is English).
     says so.
 - A **Refresh** button checks OneDrive again for new, moved or deleted photos.
 - Two buttons side by side: **📅 Calendar** opens the outfit calendar and **📊 Stats** the
-  wardrobe stats.
+  wardrobe stats. Under them, **🛍️ Shop check** (added in 1.27) checks a piece she's thinking of
+  buying against her wardrobe and keeps her wishlist; it has its own spec,
+  `2026-10-31-shop-check-wishlist-design.md`.
 
 ### Wardrobe stats (added later)
 
@@ -452,7 +454,8 @@ Microsoft names this folder after the app registration).
   "outfitPenalties": { "<id A>|<id B>|<id C>": -5 },
   "diary": [{ "date": "2026-10-25", "kind": "wore", "occasion": "work", "ids": ["<id A>", "<id B>", "<id C>"] }],
   "stats": { "worn": 12, "celebrated": 10 },
-  "settings": { "occasion": "everyday", "temperature": "mild", "name": null }
+  "settings": { "occasion": "everyday", "temperature": "mild", "name": null },
+  "wishlist": [{ "id": "<onedrive item id>", "fileName": "photo-1.jpg", "category": "tops", "color": "red", "warmth": "medium", "style": "smart", "addedAt": "2026-10-31" }]
 }
 ```
 
@@ -461,6 +464,8 @@ Microsoft names this folder after the app registration).
 - `settings.name` is her name for the app (at most 40 letters), or `null` for the default.
 - `warmth` and `style` are `null` until she labels the piece.
 - `note` (her note on the piece, at most 100 letters) is only there when she wrote one.
+- `wishlist` holds the pieces she might buy, oldest first; their photos are in the
+  `Wishlist` folder next to `Wardrobe` (shop check spec, §4).
 - IDs inside the keys of `pairScores` and `outfitPenalties` are sorted, so the same pair or
   outfit always gets the same key.
 - `diary` lists her taps oldest first (`kind` is `wore`, `like` or `dislike`): at most 500
@@ -497,12 +502,14 @@ js/habits.js             Learn her habits from the diary (section 3.6)
 js/eggs.js               Easter egg rules (section 2, Easter eggs)
 js/worn.js               What she wore each day, for the outfit calendar (section 2)
 js/stats.js              Her wardrobe in numbers, for the stats screen (section 2)
+js/shop.js               Shop check: the outfits a piece she might buy would make
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
 js/ui/worn.js            Outfit calendar screen
 js/ui/stats.js           Wardrobe stats screen
+js/ui/shop.js            Shop check screen and the wishlist
 js/ui/eggs.js            The hidden bits of the home screen
 js/ui/party.js           Short messages and confetti
 js/ui/intro.js           The name's 7 opening animations
