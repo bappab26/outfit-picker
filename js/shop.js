@@ -51,6 +51,18 @@ export function shopCheck(items, labels, data, { today, habits }) {
   return { count: found.size, best };
 }
 
+// Checks for one visit to the Shop check screen: each set of labels is worked out once, so
+// drawing the screen again (a tap, "Saving…") doesn't redo it. Her wardrobe can't change during
+// a visit, except with I bought it, after which the caller starts a new one.
+export function createShopChecks(items, data, options) {
+  const done = new Map();
+  return (labels) => {
+    const key = [labels.category, labels.color, labels.warmth, labels.style].join('|');
+    if (!done.has(key)) done.set(key, shopCheck(items, labels, data, options));
+    return done.get(key);
+  };
+}
+
 // The line under "Goes with N outfits".
 export function shopVerdict(count) {
   const { great, few, little } = SETTINGS.shop;

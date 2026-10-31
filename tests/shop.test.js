@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { COLORS, pairColorPoints } from '../js/colors.js';
 import { CATEGORIES, OCCASIONS, ROLES, TEMPERATURES, buildOutfits, withIndexes } from '../js/rules.js';
-import { SHOP_ID, readyToCheck, shopCheck, shopVerdict } from '../js/shop.js';
+import { SHOP_ID, createShopChecks, readyToCheck, shopCheck, shopVerdict } from '../js/shop.js';
 import { makeItem as m, blankData } from './helpers.js';
 
 const today = '2026-10-31';
@@ -137,4 +137,16 @@ test('every type of piece checks quickly in a realistic 200-piece wardrobe', () 
   for (const category of CATEGORIES) shopCheck(items, labels(category, 'black'), blankData(), options);
   const ms = performance.now() - start;
   assert.ok(ms < 2000, `all 11 types: ${Math.round(ms)} ms`);
+});
+
+test('during one visit, each set of labels is worked out once', () => {
+  const items = realisticWardrobe(200, 3);
+  const checks = createShopChecks(items, blankData(), options);
+  const first = checks(labels('coats', 'black'));
+  const start = performance.now();
+  const again = checks({ ...labels('coats', 'black'), photo: 'blob:x', wishId: null });
+  assert.ok(performance.now() - start < 5, 'the second time is instant');
+  assert.equal(again, first);
+  assert.deepEqual(first, shopCheck(items, labels('coats', 'black'), blankData(), options));
+  assert.notEqual(checks(labels('coats', 'navy')), first);
 });

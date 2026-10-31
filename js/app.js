@@ -9,7 +9,7 @@ import { learnHabits, styleSummary } from './habits.js';
 import { createGraph, GraphError } from './onedrive.js';
 import { photoFileName, shrinkPhoto } from './photos.js';
 import { pickOutfits } from './rules.js';
-import { readyToCheck, shopCheck } from './shop.js';
+import { createShopChecks, readyToCheck } from './shop.js';
 import { createOneDriveSource, createSampleSource } from './sources.js';
 import { allItems, createSaver, labeledItems, tidyName, tidyNote, unlabeledIds, updateWishlistItem } from './store.js';
 import { append, clear, h } from './ui/dom.js';
@@ -101,6 +101,8 @@ const state = {
   // Shop check: the piece being checked ({ photo, blob, color, category, style, warmth, wishId },
   // or null), and whether "Remove from your wishlist?" is asked.
   shop: { check: null, confirmRemove: false },
+  // The checks worked out during this visit to the Shop check screen (createShopChecks), or null.
+  shopChecks: null,
   // Outfit calendar: the month shown ('YYYY-MM'), the day picked and the outfit of that day
   // shown big (its index), or null.
   worn: { month: null, day: null, zoomed: null },
@@ -500,6 +502,7 @@ const wardrobeActions = {
   },
   openShop() {
     endCheck();
+    state.shopChecks = null;
     show('shop');
   },
 };
@@ -580,6 +583,7 @@ const shopActions = {
     if (state.busy || !check?.wishId) return;
     if (await busyChange('Moving…', () => state.source.buyWishlistItem(state.data, check.wishId))) {
       changed();
+      state.shopChecks = null; // a new piece in her wardrobe: the other items' numbers change
       if (state.shop.check === check) endCheck();
       toast('Added to your wardrobe 🎉');
     }
@@ -828,10 +832,12 @@ function renderWornScreen() {
 }
 
 function renderShopScreen() {
-  const today = todayISO();
   const items = labeledItems(state.data);
-  const habits = learnHabits(state.data, today);
-  const check = (labels) => shopCheck(items, labels, state.data, { today, habits });
+  if (!state.shopChecks) {
+    const today = todayISO();
+    state.shopChecks = createShopChecks(items, state.data, { today, habits: learnHabits(state.data, today) });
+  }
+  const check = state.shopChecks;
   const { check: open, confirmRemove } = state.shop;
   const canWishlist = Boolean(state.source.canWishlist);
   renderShop(screenRoot, {
