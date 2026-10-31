@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SETTINGS } from '../js/settings.js';
-import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver, addPiece, removePieces } from '../js/store.js';
+import { emptyData, parseData, isReadable, mergeListing, labeledItems, unlabeledIds, createSaver, addPiece, removePieces, tidyNote } from '../js/store.js';
 
 const entry = (id, category = 'tops', fileName = `${id}.jpg`) => ({ id, category, fileName, thumbUrl: null });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -45,6 +45,17 @@ test('parseData repairs bad fields instead of crashing', () => {
   assert.deepEqual(data.outfitPenalties, {});
   assert.deepEqual(data.settings, { occasion: 'everyday', temperature: 'cold', name: null });
   assert.deepEqual(unlabeledIds(data), ['a']);
+});
+
+test('a note on a piece is kept, tidied and at most 100 letters; an empty one is left out', () => {
+  assert.equal(tidyNote('  needs ironing  '), 'needs ironing');
+  assert.equal(tidyNote('x'.repeat(150)), 'x'.repeat(100));
+  assert.equal(tidyNote('   '), null);
+  assert.equal(tidyNote(42), null);
+  const piece = { category: 'tops', fileName: 'a.jpg', addedAt: '2026-10-01' };
+  const data = parseData(JSON.stringify({ version: 1, items: { a: { ...piece, note: ' a bit tight ' }, b: { ...piece, note: '' }, c: { ...piece, note: 7 } } }));
+  assert.equal(data.items.a.note, 'a bit tight');
+  assert.ok(!('note' in data.items.b) && !('note' in data.items.c));
 });
 
 test('mergeListing adds new photos as unlabeled pieces', () => {

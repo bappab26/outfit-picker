@@ -1,8 +1,10 @@
 // Labeling screen: one piece at a time, with its color, warmth and style (spec §2).
-// Opened from the Wardrobe screen, it also moves the piece to another folder or deletes it.
+// Opened from the Wardrobe screen, it also takes a note, moves the piece to another folder or
+// deletes it.
 import { COLORS, SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
 import { STYLES, WARMTHS } from '../rules.js';
+import { NOTE_MAX } from '../store.js';
 import { append, choices, h, sharpPhoto, swatch } from './dom.js';
 import { STYLE_LABELS, WARMTH_LABELS, colorLabel, warmthHint } from './labels.js';
 
@@ -18,6 +20,20 @@ function deleteRow(view, actions) {
     h('div', { class: 'confirm-actions' },
       h('button', { onclick: actions.cancelDelete }, 'Cancel'),
       h('button', { class: 'danger', disabled: Boolean(view.busy), onclick: actions.confirmDelete }, 'Delete')));
+}
+
+// Her note on the piece ("needs ironing"). It's saved as she types, without drawing the
+// screen again, so the box keeps its place.
+function noteBox(item, actions) {
+  const input = h('input', {
+    class: 'name-input note-input', type: 'text', value: item.note ?? '', maxlength: NOTE_MAX,
+    placeholder: 'Like: needs ironing', 'aria-label': 'Note', autocomplete: 'off', enterkeyhint: 'done',
+  });
+  input.addEventListener('input', () => actions.setNote(input.value));
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') input.blur();
+  });
+  return h('div', { class: 'group' }, h('div', { class: 'group-label' }, 'Note'), input);
 }
 
 export function renderLabel(root, view, actions) {
@@ -49,6 +65,7 @@ export function renderLabel(root, view, actions) {
     choices('Warmth', WARMTHS, WARMTH_LABELS, item.warmth, actions.setWarmth),
     h('p', { class: 'hint warmth-hint' }, warmthHint(item.category)),
     choices('Style', STYLES, STYLE_LABELS, item.style, actions.setStyle),
+    mode === 'edit' && noteBox(item, actions),
     mode === 'edit' && choices('Folder', Object.values(FOLDERS), FOLDER_LABELS, item.category, actions.move),
     view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
     view.note && h('p', { class: 'note', role: 'alert' }, view.note),
