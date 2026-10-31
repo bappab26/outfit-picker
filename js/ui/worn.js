@@ -1,7 +1,7 @@
 // Outfit calendar screen: the days she tapped Wore this, a month at a time
 // (spec §2, Outfit calendar).
 import { monthWeeks } from '../worn.js';
-import { append, h, photo } from './dom.js';
+import { append, bigOutfit, h, photo, tapAttrs } from './dom.js';
 import { MONTH_NAMES, OCCASION_LABELS, WEEKDAY_NAMES } from './labels.js';
 
 // 'Fri, Oct 30'
@@ -31,18 +31,37 @@ function dayButton(day, view, actions) {
   }, String(Number(day.slice(8))));
 }
 
-// Under the calendar: what she wore on the day picked.
-function dayOutfits(view) {
+const outfitTitle = (view, outfit) => `${dayTitle(view.day)} · ${OCCASION_LABELS[outfit.occasion]}`;
+
+// Under the calendar: what she wore on the day picked. Tapping an outfit shows it big.
+function dayOutfits(view, actions) {
   if (!view.day) {
     return h('p', { class: 'hint' }, view.hasAny ? 'Nothing saved this month.' : 'Tap Wore this on an outfit and it shows up here.');
   }
   if (!view.outfits.length) return h('p', { class: 'hint' }, 'Nothing saved for this day.');
-  return view.outfits.map((outfit) => h('section', { class: 'card worn-outfit' },
-    h('h2', {}, `${dayTitle(view.day)} · ${OCCASION_LABELS[outfit.occasion]}`),
-    outfit.ids.length
-      ? h('div', { class: `pieces count-${outfit.ids.length}` },
-        outfit.ids.map((id) => h('figure', { class: 'piece' }, photo(view.photoUrl(id), view.fileName(id)))))
-      : h('p', { class: 'hint' }, 'These pieces are no longer in your wardrobe.')));
+  return view.outfits.map((outfit, i) => {
+    const title = outfitTitle(view, outfit);
+    if (!outfit.ids.length) {
+      return h('section', { class: 'card worn-outfit' },
+        h('h2', {}, title),
+        h('p', { class: 'hint' }, 'These pieces are no longer in your wardrobe.'));
+    }
+    return h('section', { class: 'card worn-outfit zoomable', ...tapAttrs(() => actions.zoom(i), `${title}: see it bigger`) },
+      h('h2', {}, title),
+      h('div', { class: `pieces count-${outfit.ids.length}` },
+        outfit.ids.map((id) => h('figure', { class: 'piece' }, photo(view.photoUrl(id), view.fileName(id))))));
+  });
+}
+
+// The outfit tapped, big. Just to look at: that day is over, so no buttons.
+function bigWorn(view, actions) {
+  const outfit = view.outfits[view.zoomed];
+  if (!outfit?.ids.length) return null;
+  return bigOutfit(outfit.ids.map((id) => ({ url: view.photoUrl(id), fileName: view.fileName(id) })), {
+    top: h('h2', {}, outfitTitle(view, outfit)),
+    opening: view.zoomOpening,
+    onClose: actions.closeZoom,
+  });
 }
 
 export function renderWorn(root, view, actions) {
@@ -58,5 +77,6 @@ export function renderWorn(root, view, actions) {
     h('div', { class: 'calendar' },
       WEEKDAY_NAMES.map((name) => h('span', { class: 'weekday', 'aria-hidden': 'true' }, name[0])),
       monthWeeks(view.month).flat().map((day) => dayButton(day, view, actions))),
-    dayOutfits(view));
+    dayOutfits(view, actions),
+    view.zoomed !== null && bigWorn(view, actions));
 }

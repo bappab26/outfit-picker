@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DEFAULT_NAME, VERSION, VERSION_LINE, VERSION_NUMBER } from '../js/ui/labels.js';
+import { DEFAULT_NAME, VERSION_LINE, VERSION_NUMBER } from '../js/ui/labels.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -24,13 +24,9 @@ test('the name is bigger on the opening screen than on the home screen', () => {
   assert.match(read('css/app.css'), /\.signin h1 \{ font-size: 36px; \}/);
 });
 
-test('the version is a date', () => {
-  assert.match(VERSION, /^\d{4}-\d{2}-\d{2}$/);
-});
-
-test('the version line shows the version number, the date and bap bap', () => {
+test('the version line shows the version number and bap bap, with no date', () => {
   assert.match(VERSION_NUMBER, /^1\.\d+$/);
-  assert.equal(VERSION_LINE, `Version ${VERSION_NUMBER} · ${VERSION} · by bap bap`);
+  assert.equal(VERSION_LINE, `Version ${VERSION_NUMBER} · by bap bap`);
 });
 
 test('the version number goes up with the service worker cache', () => {
@@ -49,6 +45,13 @@ test('the version line sits at the bottom of the other screens', () => {
   assert.match(css, /\.version \{[^}]*margin: auto 0 0;/);
   // Every screen gets its version line from render() in app.js, not from the screen itself.
   for (const file of ['js/ui/home.js', 'js/ui/wardrobe.js', 'js/ui/label.js']) assert.ok(!/versionLine\(|VERSION_LINE/.test(read(file)), file);
+});
+
+test('evil mode turns every screen blood red, the phone bars too', () => {
+  const evil = read('css/app.css').match(/\nbody\.evil \{([^}]*)\}/)[1];
+  for (const color of ['--bg: #1c0609;', '--surface: #3a0f17;', '--accent: #ff3355;']) assert.ok(evil.includes(color), color);
+  // The phone's top bar takes --bg from the body (applyTheme in app.js).
+  assert.match(read('js/app.js'), /getComputedStyle\(document\.body\)\.getPropertyValue\('--bg'\)/);
 });
 
 test('the app, the phone bars, the splash screen and the icons share one background color', () => {

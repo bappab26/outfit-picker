@@ -51,3 +51,34 @@ export function photo(url, fileName) {
   img.addEventListener('error', () => img.replaceWith(placeholder()));
   return img;
 }
+
+// Attributes that make a box work as one button: a tap, Enter or Space calls `onTap`.
+export function tapAttrs(onTap, label) {
+  return {
+    role: 'button',
+    tabindex: '0',
+    'aria-label': label,
+    onclick: onTap,
+    onkeydown: (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      onTap();
+    },
+  };
+}
+
+// One outfit, big, over a darkened screen: `pieces` are { url, fileName }, `top` sits beside
+// the × and `after` under the photos. × or a tap on the dark area closes it (Esc too, in app.js).
+export function bigOutfit(pieces, { top, after, opening, onClose }) {
+  const close = h('button', { class: 'icon zoom-close', 'aria-label': 'Close', onclick: onClose }, '×');
+  const panel = h('div', { class: 'zoom-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Outfit' },
+    h('div', { class: 'zoom-top' }, top, close),
+    h('div', { class: 'zoom-pieces' }, pieces.map(({ url, fileName }) => h('figure', { class: 'piece' }, photo(url, fileName)))),
+    after);
+  const backdrop = h('div', { class: opening ? 'zoom opening' : 'zoom' }, panel);
+  backdrop.addEventListener('click', (event) => {
+    if (event.target === backdrop) onClose();
+  });
+  if (opening) queueMicrotask(() => close.focus({ preventScroll: true }));
+  return backdrop;
+}

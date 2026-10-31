@@ -94,7 +94,7 @@ When a change touches anything the phone downloads (`index.html`, `css/`, `js/`,
 `manifest.webmanifest`, `sw.js`):
 
 - Raise `CACHE_NAME` in `sw.js` and `VERSION_NUMBER` in `js/ui/labels.js` together
-  (`outfit-picker-v20` goes with `'1.20'`), and set `VERSION` to the day's date.
+  (`outfit-picker-v20` goes with `'1.20'`).
 - Add any new file under `js/` to `APP_FILES` in `sw.js`.
 
 `npm test` checks both. Changes to docs, tests or tools alone don't need a new version.

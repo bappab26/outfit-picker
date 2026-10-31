@@ -1,11 +1,11 @@
-// Little hidden surprises (spec §2, "Easter eggs"): devil mode and the angel look, the secret
+// Little hidden surprises (spec §2, "Easter eggs"): evil mode and the angel look, the secret
 // card, rare cards, the 👎 nudge, her birthday, late nights, one year ago today and Wore this
 // milestones. The rules live here; ui/eggs.js and ui/party.js show them.
 
 export const EGGS = {
-  // Taps on the version line that turn devil mode on or off, each at most tapGapMs after the
+  // Taps on the version line that turn evil mode on or off, each at most tapGapMs after the
   // last; a countdown shows from the countdownFrom-th tap.
-  devilTaps: 6,
+  evilTaps: 6,
   countdownFrom: 4,
   tapGapMs: 1000,
   // Holding the version line this long opens the secret card.
@@ -33,10 +33,10 @@ const NOTE = 'QnVpbHQgd2l0aCBsb3ZlIGFuZCB6ZXJvIGZhc2hpb24gc2Vuc2UgYnkgYmFwIGJhcC
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December'];
 
-// 'angel' when her name for the app has "angel" in it, else 'devil' in devil mode, else null.
-export function eggTheme(name, devil) {
+// 'angel' when her name for the app has "angel" in it, else 'evil' in evil mode, else null.
+export function eggTheme(name, evil) {
   if (/angel/i.test(name)) return 'angel';
-  return devil ? 'devil' : null;
+  return evil ? 'evil' : null;
 }
 
 // One more tap on the version line at `now` (ms): { count, at }.

@@ -28,9 +28,10 @@ const MODE_KEY = 'outfit-picker:mode';
 const ACCOUNT_KEY = 'outfit-picker:account';
 // Her name for the app, so the sign-in screen shows it before her data has loaded.
 const NAME_KEY = 'outfit-picker:name';
-// Easter eggs (eggs.js): devil mode ('on'), the pieces she told "Keep it" (a JSON list), the
-// year her birthday card last showed and the day she hid "One year ago today".
-const DEVIL_KEY = 'outfit-picker:devil';
+// Easter eggs (eggs.js): evil mode ('on'), the pieces she told "Keep it" (a JSON list), the
+// year her birthday card last showed and the day she hid "One year ago today". Evil mode's key
+// keeps its first name, devil mode, so phones that have it on keep it on.
+const EVIL_KEY = 'outfit-picker:devil';
 const KEPT_KEY = 'outfit-picker:kept';
 const BIRTHDAY_KEY = 'outfit-picker:birthday';
 const MEMORY_KEY = 'outfit-picker:memory-hidden';
@@ -45,7 +46,9 @@ document.addEventListener('gesturestart', (event) => event.preventDefault());
 
 // Esc closes the big outfit, the secret card or the birthday card (on a computer).
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape' || state.screen !== 'home') return;
+  if (event.key !== 'Escape') return;
+  if (state.screen === 'worn' && state.worn.zoomed !== null) calendarActions.closeZoom();
+  if (state.screen !== 'home') return;
   if (state.secretOpen) homeActions.closeSecret();
   else if (state.birthdayOpen) homeActions.closeBirthday();
   else if (state.zoomed !== null) homeActions.closeZoom();
@@ -90,11 +93,12 @@ const state = {
   confirmDelete: false,
   busy: null,
   note: null,
-  // Outfit calendar: the month shown ('YYYY-MM') and the day picked, or null.
-  worn: { month: null, day: null },
-  // Easter eggs: devil mode, the quick taps on the version line so far, and whether the
+  // Outfit calendar: the month shown ('YYYY-MM'), the day picked and the outfit of that day
+  // shown big (its index), or null.
+  worn: { month: null, day: null, zoomed: null },
+  // Easter eggs: evil mode, the quick taps on the version line so far, and whether the
   // secret card or the birthday card is open.
-  devil: storage.getItem(DEVIL_KEY) === 'on',
+  evil: storage.getItem(EVIL_KEY) === 'on',
   taps: null,
   secretOpen: false,
   birthdayOpen: false,
@@ -272,7 +276,7 @@ const homeActions = {
   // Easter eggs
   tapVersion() {
     state.taps = countTap(state.taps, Date.now());
-    const left = EGGS.devilTaps - state.taps.count;
+    const left = EGGS.evilTaps - state.taps.count;
     if (left > 0) {
       if (state.taps.count >= EGGS.countdownFrom) toast(`${left}…`, 1200);
       return;
@@ -282,10 +286,10 @@ const homeActions = {
       toast("Angels can't go evil 😇");
       return;
     }
-    state.devil = !state.devil;
-    if (state.devil) storage.setItem(DEVIL_KEY, 'on');
-    else storage.removeItem(DEVIL_KEY);
-    toast(state.devil ? 'Devil mode on 😈' : 'Devil mode off');
+    state.evil = !state.evil;
+    if (state.evil) storage.setItem(EVIL_KEY, 'on');
+    else storage.removeItem(EVIL_KEY);
+    toast(state.evil ? 'Evil mode on 😈' : 'Evil mode off');
     render();
   },
   openSecret() {
@@ -482,7 +486,7 @@ const wardrobeActions = {
 
 // Shows `month` with its latest Wore this picked.
 function showMonth(month) {
-  state.worn = { month, day: lastWornDay(state.data, todayISO(), month) };
+  state.worn = { month, day: lastWornDay(state.data, todayISO(), month), zoomed: null };
 }
 
 const calendarActions = {
@@ -496,7 +500,16 @@ const calendarActions = {
     render();
   },
   pickDay(day) {
-    state.worn.day = day;
+    state.worn = { ...state.worn, day, zoomed: null };
+    render();
+  },
+  zoom(i) {
+    state.worn.zoomed = i;
+    state.zoomOpening = true;
+    render();
+  },
+  closeZoom() {
+    state.worn.zoomed = null;
     render();
   },
 };
@@ -668,11 +681,13 @@ function renderWardrobeScreen() {
 
 function renderWornScreen() {
   const today = todayISO();
-  const { month, day } = state.worn;
+  const { month, day, zoomed } = state.worn;
   const first = firstMonth(state.data);
   renderWorn(screenRoot, {
     month,
     day,
+    zoomed,
+    zoomOpening: takeZoomOpening(),
     today,
     wornDays: wornDays(state.data, month),
     outfits: day ? outfitsOn(state.data, day) : [],
@@ -697,10 +712,10 @@ const SCREENS = {
   worn: renderWornScreen,
 };
 
-// Devil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
+// Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
 function applyTheme() {
-  const theme = eggTheme(displayName(), state.devil);
-  document.body.classList.toggle('devil', theme === 'devil');
+  const theme = eggTheme(displayName(), state.evil);
+  document.body.classList.toggle('evil', theme === 'evil');
   document.body.classList.toggle('angel', theme === 'angel');
   const bg = getComputedStyle(document.body).getPropertyValue('--bg').trim();
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
@@ -718,7 +733,7 @@ function render() {
   SCREENS[state.screen]();
   if (screenRoot !== content) return; // the screen changed and was drawn again (renderLabelScreen)
   // The version line, at the bottom of every screen but the opening ones; on the home screen
-  // it hides devil mode and the secret card (ui/eggs.js).
+  // it hides evil mode and the secret card (ui/eggs.js).
   if (state.screen === 'home') root.append(versionLine(homeActions));
   else if (!NO_VERSION_LINE.includes(state.screen)) root.append(h('footer', { class: 'version' }, VERSION_LINE));
   const panel = root.querySelector('.zoom-panel');
