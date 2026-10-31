@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COLORS } from '../js/colors.js';
-import { CATEGORIES, ROLES } from '../js/rules.js';
+import { COLORS, pairColorPoints } from '../js/colors.js';
+import { CATEGORIES, OCCASIONS, ROLES, TEMPERATURES, buildOutfits, withIndexes } from '../js/rules.js';
 import { SHOP_ID, readyToCheck, shopCheck, shopVerdict } from '../js/shop.js';
 import { makeItem as m, blankData } from './helpers.js';
 
@@ -85,4 +85,56 @@ test('a check stays quick with 200 pieces', () => {
   const ms = performance.now() - start;
   assert.ok(count > 0);
   assert.ok(ms < 2000, `${Math.round(ms)} ms`);
+});
+
+// A wardrobe like a real one: mostly tops, shoes and neutral colors, a few of everything else.
+// The same `seed` always gives the same wardrobe.
+function realisticWardrobe(size, seed) {
+  const kinds = [['tops', 25], ['hoodies', 5], ['sweatshirts', 5], ['pants', 8], ['jeans', 8], ['shorts', 4],
+    ['skirts', 6], ['dresses', 8], ['shoes', 14], ['jackets', 9], ['coats', 8]].flatMap(([kind, n]) => Array(n).fill(kind));
+  const colors = ['black', 'black', 'black', 'white', 'white', 'grey', 'beige', 'navy', 'denim', 'brown', 'pink', 'red', 'blue', 'green'];
+  const styles = ['casual', 'casual', 'casual', 'smart', 'smart', 'dressy', 'cozy'];
+  const warmths = ['light', 'medium', 'medium', 'warm'];
+  let s = seed;
+  const pick = (list) => list[Math.floor(((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648) * list.length)];
+  return Array.from({ length: size }, (_, i) => m(`p${i}`, pick(kinds), { color: pick(colors), style: pick(styles), warmth: pick(warmths) }));
+}
+
+// Every outfit the rules allow with the new piece, built with no cut at all (only for small wardrobes).
+function countWithoutCut(items, labels) {
+  const piece = { id: SHOP_ID, ...labels, fileName: '', addedAt: today, lastWorn: null, wearCount: 0 };
+  const others = items.filter((i) => ROLES[i.category] !== ROLES[piece.category]);
+  const keys = new Set();
+  for (const occasion of OCCASIONS) {
+    for (const temperature of TEMPERATURES) {
+      for (const outfit of buildOutfits(withIndexes([...others, piece]), { occasion, temperature }).outfits) {
+        const holds = outfit.items.some((p) => p.id === SHOP_ID);
+        if (holds && outfit.items.every((p) => p.id === SHOP_ID || pairColorPoints(piece.color, p.color) >= 0)) keys.add(outfit.key);
+      }
+    }
+  }
+  return keys.size;
+}
+
+test('in a realistic wardrobe, a hoodie, a sweatshirt and a dress each go with outfits', () => {
+  const items = realisticWardrobe(150, 7);
+  for (const [category, color] of [['hoodies', 'grey'], ['sweatshirts', 'black'], ['dresses', 'black']]) {
+    assert.ok(shopCheck(items, labels(category, color), blankData(), options).count > 0, category);
+  }
+});
+
+test('in a small wardrobe, the count is every outfit the rules allow', () => {
+  // No hoodies or sweatshirts: the app always puts only the best 4 tops under one, on purpose.
+  const items = realisticWardrobe(40, 11).filter((i) => ROLES[i.category] !== 'layer');
+  for (const [category, color] of [['tops', 'black'], ['dresses', 'black'], ['shoes', 'white'], ['skirts', 'beige'], ['coats', 'navy']]) {
+    assert.equal(shopCheck(items, labels(category, color), blankData(), options).count, countWithoutCut(items, labels(category, color)), category);
+  }
+});
+
+test('every type of piece checks quickly in a realistic 200-piece wardrobe', () => {
+  const items = realisticWardrobe(200, 3);
+  const start = performance.now();
+  for (const category of CATEGORIES) shopCheck(items, labels(category, 'black'), blankData(), options);
+  const ms = performance.now() - start;
+  assert.ok(ms < 2000, `all 11 types: ${Math.round(ms)} ms`);
 });

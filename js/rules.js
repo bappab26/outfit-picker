@@ -114,8 +114,15 @@ function best(lists, count, rank, { spread = false } = {}) {
 
 // Every outfit that fits the occasion and temperature. `items` must be fully labeled.
 // With `rank` (an outfit's score), a big wardrobe is cut down while building, as above.
-export function buildOutfits(items, { occasion, temperature }, { rank = null, underTops = UNDER_TOPS, keep = KEEP } = {}) {
+// With `mustHold` (a piece's id), only outfits holding that piece are built, so the cut only
+// ranks those, and without spreading (the shop check counts them; no cards to share out).
+export function buildOutfits(items, { occasion, temperature }, { rank = null, underTops = UNDER_TOPS, keep = KEEP, mustHold = null } = {}) {
   const fitting = items.filter((i) => fitsStyle(i, occasion) && fitsTemperature(i, temperature));
+  const needed = mustHold && fitting.find((i) => i.id === mustHold);
+  if (mustHold && !needed) return { outfits: [], notes: outfitNotes(items, { occasion, temperature }, false) };
+  // A jacket or coat is only added after the cut, so the outfits it can go on aren't filtered.
+  const neededOuter = needed && ROLES[needed.category] === 'outer';
+  const holds = (pieces) => !needed || neededOuter || pieces.includes(needed);
   const of = (role) => fitting.filter((i) => ROLES[i.category] === role);
   const tops = of('top');
   const layers = of('layer');
@@ -136,12 +143,13 @@ export function buildOutfits(items, { occasion, temperature }, { rank = null, un
     for (const u of uppers) for (const b of bottoms) bases.push([...u, b, s]);
     for (const d of dresses) bases.push([d, s]);
   }
-  bases = bestOf(bases.filter((base) => boldColors(base).size <= SETTINGS.maxBoldColors), keep, { spread: true });
+  bases = bestOf(bases.filter((base) => holds(base) && boldColors(base).size <= SETTINGS.maxBoldColors), keep, { spread: !mustHold });
 
   const coatRequired = needsCoat({ occasion, temperature });
   let extras;
   if (coatRequired) extras = outers.length ? outers : [null];
   else extras = [null, ...outers];
+  if (neededOuter) extras = extras.filter((outer) => outer === needed);
 
   const outfits = [];
   for (const base of bases) {

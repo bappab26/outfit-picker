@@ -23,20 +23,20 @@ export function shopCheck(items, labels, data, { today, habits }) {
     id: SHOP_ID, category: labels.category, fileName: '', color: labels.color, warmth: labels.warmth,
     style: labels.style, addedAt: today, lastWorn: null, wearCount: 0,
   };
-  // Every other piece of the same role is left out, so each outfit built holds the new piece
-  // or can be dropped.
+  // Every other piece of the same role is left out: an outfit has one of each.
   const role = ROLES[piece.category];
   const others = items.filter((item) => ROLES[item.category] !== role);
   const clashes = (outfit) => outfit.items.some((p) => p.id !== SHOP_ID && pairColorPoints(piece.color, p.color) < 0);
 
-  // Each outfit once, with the best score it got for any occasion and temperature.
+  // Each outfit once, with the best score it got for any occasion and temperature. Only outfits
+  // holding the new piece are built (`mustHold`), so the cut for a big wardrobe ranks only those.
+  const pieces = withIndexes([...others, piece]);
   const found = new Map();
   for (const occasion of OCCASIONS) {
+    const score = makeScorer(pieces, data, { today, rng: () => 0, habits, occasion });
     for (const temperature of TEMPERATURES) {
-      const pieces = withIndexes([...others, piece]);
-      const score = makeScorer(pieces, data, { today, rng: () => 0, habits, occasion });
-      for (const outfit of buildOutfits(pieces, { occasion, temperature }, { rank: score }).outfits) {
-        if (!outfit.items.some((p) => p.id === SHOP_ID) || clashes(outfit)) continue;
+      for (const outfit of buildOutfits(pieces, { occasion, temperature }, { rank: score, mustHold: SHOP_ID }).outfits) {
+        if (clashes(outfit)) continue;
         const points = score(outfit);
         const seen = found.get(outfit.key);
         if (!seen || points > seen.points) found.set(outfit.key, { pieces: outfit.items, points });
