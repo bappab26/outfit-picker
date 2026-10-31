@@ -56,10 +56,10 @@ test('the opening screens (sign-in, loading, error) have no version line', () =>
 
 test('the version line sits at the bottom of the other screens', () => {
   const css = read('css/app.css');
-  const app = css.match(/\n#app \{([^}]*)\}/)[1];
+  const app = css.match(/\n#app(?:, [^{]+)? \{([^}]*)\}/)[1];
   for (const rule of ['display: flex;', 'flex-direction: column;', 'min-height: 100dvh;']) assert.ok(app.includes(rule), rule);
   assert.match(css, /\.version \{[^}]*margin: auto 0 0;/);
-  // Every screen gets its version line from render() in app.js, not from the screen itself.
+  // Every screen gets its version line from drawScreen() in app.js, not from the screen itself.
   for (const file of ['js/ui/home.js', 'js/ui/wardrobe.js', 'js/ui/label.js']) assert.ok(!/versionLine\(|VERSION_LINE/.test(read(file)), file);
 });
 

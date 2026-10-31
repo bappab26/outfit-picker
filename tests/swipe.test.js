@@ -9,12 +9,17 @@ const textBox = { closest: (selector) => (selector.includes('textarea') ? {} : n
 function screen({ canGoBack = () => true } = {}) {
   const listeners = {};
   const surface = { addEventListener: (type, fn) => (listeners[type] ??= []).push(fn) };
-  const seen = { backs: 0, drags: [], releases: [] };
+  const seen = { backs: 0, drags: [], releases: [], order: [] };
   watchSwipes(surface, {
-    backAction: () => (canGoBack() ? () => seen.backs++ : null),
+    backAction: () => (canGoBack() ? () => (seen.backs++, seen.order.push('back')) : null),
     width: () => 375,
     drag: (px) => seen.drags.push(px),
-    release: (wentBack) => seen.releases.push(wentBack),
+    // Like the app: the screens slide the rest of the way, then Back runs.
+    release: (back) => {
+      seen.releases.push(Boolean(back));
+      seen.order.push('release');
+      back?.();
+    },
   });
   const fire = (type, x, y, t, extra = {}) => {
     const event = {
@@ -44,6 +49,12 @@ test('a swipe right past a third of the screen goes back, the screen following t
   assert.equal(seen.backs, 1);
   assert.deepEqual(seen.drags, [20, 80, 140]);
   assert.deepEqual(seen.releases, [true]);
+});
+
+test('going back, Back is handed over to run once the screens have slid the rest of the way', () => {
+  const { seen, fire } = screen();
+  swipe(fire, [[60, 302], [120, 305], [180, 306]]);
+  assert.deepEqual(seen.order, ['release', 'back']);
 });
 
 test('a short, slow swipe slides back into place without going back', () => {
@@ -143,4 +154,18 @@ test('after a swipe, the tap the browser sees as she lets go is ignored, and the
   fire('pointerup', 100, 300, 3080);
   const tap = fire('click', 100, 300, 3080);
   assert.ok(!tap.stopped && !tap.prevented);
+});
+
+test('a later tap with no finger down first (a key press) still works after a swipe', async () => {
+  const { fire } = screen();
+  swipe(fire, [[60, 300], [100, 300]]);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const key = fire('click', 100, 300, 5000);
+  assert.ok(!key.stopped && !key.prevented);
+
+  fire('pointerdown', 40, 300, 6000);
+  fire('pointermove', 80, 300, 6100);
+  fire('pointercancel', 80, 300, 6150);
+  const afterCancel = fire('click', 100, 300, 7000);
+  assert.ok(!afterCancel.stopped && !afterCancel.prevented);
 });

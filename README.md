@@ -20,7 +20,8 @@ to take them back; after a 👎, **Undo 👎** brings the outfit back. Tapping a
 big, on its own; **×**, a tap outside it, or Esc closes it.
 
 Every screen with a **Back** button also goes back with a swipe to the right, anywhere on the
-screen (not while a big photo is open). On a computer, a mouse drag does the same.
+screen (not while a big photo is open). The screen it goes back to slides in alongside, like a
+phone's home screen pages. On a computer, a mouse drag does the same.
 
 Clothes can be added from the app (**Wardrobe → Add clothes**: pick a folder, then take or
 choose photos) or by saving photos into the OneDrive folders. Tapping a piece in Wardrobe
