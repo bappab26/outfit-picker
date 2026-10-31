@@ -19,6 +19,8 @@ import { renderLabel } from './ui/label.js';
 import { DEFAULT_NAME, VERSION_LINE } from './ui/labels.js';
 import { confetti, toast } from './ui/party.js';
 import { renderWardrobe } from './ui/wardrobe.js';
+import { renderWorn } from './ui/worn.js';
+import { addMonths, firstMonth, lastWornDay, outfitsOn, wornDays } from './worn.js';
 
 const MODE_KEY = 'outfit-picker:mode';
 // The email she signed in with, so being signed out (Microsoft's sign-in library forgets her
@@ -88,6 +90,8 @@ const state = {
   confirmDelete: false,
   busy: null,
   note: null,
+  // Outfit calendar: the month shown ('YYYY-MM') and the day picked, or null.
+  worn: { month: null, day: null },
   // Easter eggs: devil mode, the quick taps on the version line so far, and whether the
   // secret card or the birthday card is open.
   devil: storage.getItem(DEVIL_KEY) === 'on',
@@ -466,6 +470,35 @@ const wardrobeActions = {
     state.label = { mode: 'new', queue: result.newIds, index: 0, id: null };
     show('label');
   },
+  // Opens on her latest Wore this, or this month if there is none.
+  openCalendar() {
+    const today = todayISO();
+    showMonth((lastWornDay(state.data, today) ?? today).slice(0, 7));
+    show('worn');
+  },
+};
+
+// ----- Outfit calendar -----
+
+// Shows `month` with its latest Wore this picked.
+function showMonth(month) {
+  state.worn = { month, day: lastWornDay(state.data, todayISO(), month) };
+}
+
+const calendarActions = {
+  back: () => show('wardrobe'),
+  prevMonth() {
+    showMonth(addMonths(state.worn.month, -1));
+    render();
+  },
+  nextMonth() {
+    showMonth(addMonths(state.worn.month, 1));
+    render();
+  },
+  pickDay(day) {
+    state.worn.day = day;
+    render();
+  },
 };
 
 // ----- Modes -----
@@ -633,6 +666,24 @@ function renderWardrobeScreen() {
   }, wardrobeActions);
 }
 
+function renderWornScreen() {
+  const today = todayISO();
+  const { month, day } = state.worn;
+  const first = firstMonth(state.data);
+  renderWorn(screenRoot, {
+    month,
+    day,
+    today,
+    wornDays: wornDays(state.data, month),
+    outfits: day ? outfitsOn(state.data, day) : [],
+    hasAny: Boolean(first),
+    canGoBack: Boolean(first) && month > first,
+    canGoForward: month < today.slice(0, 7),
+    photoUrl: (id) => state.source.photoUrl(id),
+    fileName: (id) => state.data.items[id]?.fileName ?? '',
+  }, calendarActions);
+}
+
 // The opening screens stay clean: just the name and what to do.
 const NO_VERSION_LINE = ['signin', 'loading', 'error'];
 
@@ -643,6 +694,7 @@ const SCREENS = {
   home: renderHomeScreen,
   label: renderLabelScreen,
   wardrobe: renderWardrobeScreen,
+  worn: renderWornScreen,
 };
 
 // Devil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.

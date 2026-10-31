@@ -3,9 +3,9 @@ import { SWATCHES } from '../colors.js';
 import { FOLDERS } from '../config.js';
 import { OCCASIONS } from '../rules.js';
 import { append, h, photo, swatch } from './dom.js';
-import { colorLabel, OCCASION_LABELS, SHAPE_LABELS, STYLE_LABELS, WARMTH_LABELS } from './labels.js';
+import { colorLabel, MONTH_NAMES, OCCASION_LABELS, SHAPE_LABELS, STYLE_LABELS, WARMTH_LABELS } from './labels.js';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = MONTH_NAMES.map((name) => name.slice(0, 3));
 
 function lastWornText(iso) {
   if (!iso) return 'Never worn';
@@ -79,6 +79,7 @@ export function renderWardrobe(root, view, actions) {
     view.busy && h('p', { class: 'hint', role: 'status' }, view.busy),
     view.note && h('p', { class: 'note', role: 'alert' }, view.note),
     !view.items.length && h('p', { class: 'hint' }, 'No pieces yet.'),
+    h('button', { class: 'calendar-link', onclick: actions.openCalendar }, '📅 Outfit calendar'),
     view.style && styleBox(view.style),
     Object.entries(FOLDERS).map(([folder, category]) => {
       const items = view.items.filter((i) => i.category === category);
