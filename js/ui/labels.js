@@ -4,8 +4,8 @@
 export const DEFAULT_NAME = 'lil evil wardrobe';
 // This version's number and date: change both with every update (see README, "Put it online").
 // The number after "1." is the one in CACHE_NAME in sw.js.
-export const VERSION_NUMBER = '1.19';
-export const VERSION = '2026-10-25';
+export const VERSION_NUMBER = '1.20';
+export const VERSION = '2026-10-30';
 export const VERSION_LINE = `Version ${VERSION_NUMBER} · ${VERSION} · by bap bap`;
 
 export const OCCASION_LABELS = { everyday: 'Everyday', work: 'Work', evening: 'Evening out', special: 'Special event', home: 'At home' };
@@ -13,6 +13,10 @@ export const TEMPERATURE_LABELS = { cold: 'Cold', mild: 'Mild', hot: 'Hot' };
 export const WARMTH_LABELS = { light: 'Light', medium: 'Medium', warm: 'Warm' };
 export const STYLE_LABELS = { cozy: 'Cozy', casual: 'Casual', smart: 'Smart', dressy: 'Dressy' };
 export const SHAPE_LABELS = { dress: 'dresses', skirt: 'skirts', pants: 'pants', shorts: 'shorts' };
+export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December'];
+// Monday first, like the weeks of the outfit calendar.
+export const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 // Shown under Warmth while labeling: what warmth changes for this kind of piece
 // (fitsTemperature and the jacket and coat rules in rules.js).

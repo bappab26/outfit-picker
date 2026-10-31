@@ -302,6 +302,34 @@ button.danger { background: var(--danger); border-color: var(--danger); color: v
 
 /* Adding clothes */
 .add-clothes { display: block; width: 100%; margin: 0 0 12px; }
+.calendar-link { display: block; width: 100%; }
+
+/* Outfit calendar (ui/worn.js). No gap between the days, so they're as wide as they can be
+   on a 320px screen (41px; 44px tall). */
+.month-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 8px; }
+.month-bar h2 { margin: 0; }
+.month-bar .icon { font-size: 26px; line-height: 1; }
+.month-bar .icon:disabled { opacity: 0.35; }
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 4px; text-align: center; }
+.weekday { padding: 4px 0; font-size: 13px; color: var(--muted); }
+.day { position: relative; min-width: 0; padding: 0; border-color: transparent; border-radius: 10px; background: none; }
+.day:disabled { opacity: 0.35; }
+.day.worn { background: var(--surface); font-weight: 600; }
+.day.worn::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.day[aria-current="date"] { border-color: var(--accent); }
+.day[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+.day[aria-pressed="true"]::after { background: var(--accent-text); }
+.worn-outfit h2 { font-size: 16px; margin: 0 0 8px; }
+.calendar + .hint { margin-top: 16px; }
 .add-box {
   margin: 0 0 12px;
   padding: 2px 14px 8px;

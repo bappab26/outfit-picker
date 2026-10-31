@@ -132,6 +132,25 @@ and a French interface (the interface is English).
   - Both change OneDrive first: if that fails (offline), the piece stays as it was and a note
     says so.
 - A **Refresh** button checks OneDrive again for new, moved or deleted photos.
+- A **📅 Outfit calendar** button opens the outfit calendar.
+
+### Outfit calendar (added later)
+
+What she wore, a month at a time. The rules are in `js/worn.js`, the screen in `js/ui/worn.js`.
+
+- It opens on the month of her latest Wore this (this month if there is none), with that day
+  picked.
+- A month grid, weeks starting on Monday, with **‹ ›** to change month. It goes back to the
+  month of her oldest Wore this and forward to this month; days after today can't be picked.
+- Days she tapped Wore this have a dot, and today is outlined. Changing month picks that
+  month's latest Wore this.
+- Tapping a day shows what she wore that day under the grid, newest first: the date, the
+  occasion and photos of the pieces ("Fri, Oct 30 · Work"). The same outfit twice on one day
+  shows once. Pieces deleted since are left out ("These pieces are no longer in your
+  wardrobe." when none are left). A day with nothing says "Nothing saved for this day."
+- It reads the diary's Wore this lines (§4.5), so nothing new is saved. The diary keeps her
+  latest 800 Wore this, about two years. Undo on Wore this takes it off the calendar too.
+- On a 320px screen the days are 41px wide and 44px tall: seven 44px columns don't fit.
 
 ### Sample mode
 
@@ -440,10 +459,12 @@ js/rules.js              Build, filter, score and pick outfits
 js/feedback.js           Apply 👍, 👎 and Wore this to the data
 js/habits.js             Learn her habits from the diary (section 3.6)
 js/eggs.js               Easter egg rules (section 2, Easter eggs)
+js/worn.js               What she wore each day, for the outfit calendar (section 2)
 js/sample.js             Sample wardrobe and its drawings
 js/ui/home.js            Home screen
 js/ui/label.js           Labeling screen
 js/ui/wardrobe.js        Wardrobe screen
+js/ui/worn.js            Outfit calendar screen
 js/ui/eggs.js            The hidden bits of the home screen
 js/ui/party.js           Short messages and confetti
 js/ui/intro.js           The name's 7 opening animations

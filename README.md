@@ -146,8 +146,8 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
 - **Sample mode:** open the app and tap **Try with sample clothes**. It loads about 40 drawn
   pieces, no sign-in needed, so you can try the rules. It comes with a made-up month of
   choices (pink with black, casual pants outfits, dresses for evenings out), so
-  **Wardrobe → Your style so far** shows something and the picks lean that way. Tap **Exit**
-  to leave.
+  **Wardrobe → Your style so far** shows something and the picks lean that way, and
+  **Wardrobe → 📅 Outfit calendar** has a few weeks of outfits. Tap **Exit** to leave.
 - **Your own account:** tap **Sign in with Microsoft** and sign in with your own Microsoft
   account. The app creates `Wardrobe` and its 11 folders in *your* OneDrive. Add a few
   photos with **Wardrobe → Add clothes** (or save them into the folders and tap **Refresh**),
@@ -164,7 +164,11 @@ closed, unless **Stay signed in?** was answered **Yes** at sign-in. So:
 
 ## Put it online
 
-Push your changes to GitHub; Pages updates the site within a minute or two.
+Each change goes on its own branch first, so you can try it before it reaches her phone: in
+the project folder, `git fetch`, `git switch <branch>`, `npm run serve`, and open
+`http://localhost:8080/`. When you're happy, merge the branch's pull request on GitHub; Pages
+updates the site within a minute or two. Back on your computer, `git switch main` and
+`git pull`.
 
 Phones keep a copy of the app so it opens fast, and pick up a new version the next time
 it's opened. To make phones drop the old copy right away, raise the number in `CACHE_NAME`
@@ -219,6 +223,12 @@ shapes, not single pieces.
 After about 5 choices, **Wardrobe** shows **Your style so far**, for example
 "Often together: Black + Pink" or "Evening out: mostly dresses, Dressy". It's the easiest way
 to check that it's learning.
+
+## Outfit calendar
+
+**Wardrobe → 📅 Outfit calendar** shows what she wore, a month at a time. Every day she tapped
+**Wore this** has a dot; tapping a day shows that outfit with its occasion. It reads the same
+diary, so it goes back as far as her latest 800 Wore this (about two years).
 
 ## Easter eggs
 
