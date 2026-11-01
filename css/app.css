@@ -45,21 +45,21 @@ body {
   #app.screen-in { animation: none; }
 }
 
-/* Swiping right to go back (app.js): the screen and the one Back goes to (.swipe-behind) move
+/* Swiping back or forward (app.js): the screen and the one it goes to (.swipe-beside) move
    side by side with her finger, over the still leopard print. Nothing scrolls sideways or gets
    selected meanwhile. When she lets go, both slide the rest of the way (in SLIDE_MS), and
    nothing can be tapped until they're done. */
 body.swiping { overflow-x: clip; -webkit-user-select: none; user-select: none; }
-body.swipe-settling #app, body.swipe-settling .swipe-behind { transition: transform 0.2s ease-out; }
+body.swipe-settling #app, body.swipe-settling .swipe-beside { transition: transform 0.2s ease-out; }
 body.swipe-settling #app { pointer-events: none; }
-.swipe-behind { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.swipe-beside { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
-  body.swipe-settling #app, body.swipe-settling .swipe-behind { transition: none; }
+  body.swipe-settling #app, body.swipe-settling .swipe-beside { transition: none; }
 }
 
 /* At least as tall as the screen, so the version line can sit at the bottom (.version). The
-   screen behind a swipe is laid out the same. */
-#app, .swipe-behind {
+   screen beside a swipe is laid out the same. */
+#app, .swipe-beside {
   display: flex;
   flex-direction: column;
   min-height: 100vh;

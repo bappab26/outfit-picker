@@ -5,20 +5,22 @@ import { watchSwipes } from '../js/swipe.js';
 const plain = { closest: () => null };
 const textBox = { closest: (selector) => (selector.includes('textarea') ? {} : null) };
 
-// A screen 375 px wide, and what happened on it: Back taken, how far it slid, how it was let go.
-function screen({ canGoBack = () => true } = {}) {
+// A screen 375 px wide, and what happened on it: Back or forward taken, how far it slid, how it
+// was let go.
+function screen({ canGoBack = () => true, canGoForward = () => false } = {}) {
   const listeners = {};
   const surface = { addEventListener: (type, fn) => (listeners[type] ??= []).push(fn) };
-  const seen = { backs: 0, drags: [], releases: [], order: [] };
+  const seen = { backs: 0, forwards: 0, drags: [], releases: [], order: [] };
   watchSwipes(surface, {
     backAction: () => (canGoBack() ? () => (seen.backs++, seen.order.push('back')) : null),
+    forwardAction: () => (canGoForward() ? () => seen.forwards++ : null),
     width: () => 375,
     drag: (px) => seen.drags.push(px),
-    // Like the app: the screens slide the rest of the way, then Back runs.
-    release: (back) => {
-      seen.releases.push(Boolean(back));
+    // Like the app: the screens slide the rest of the way, then Back (or forward) runs.
+    release: (go) => {
+      seen.releases.push(Boolean(go));
       seen.order.push('release');
-      back?.();
+      go?.();
     },
   });
   const fire = (type, x, y, t, extra = {}) => {
@@ -86,7 +88,37 @@ test('scrolling up and down never goes back, even when the finger then moves sid
   assert.deepEqual(seen.releases, []);
 });
 
-test('a swipe to the left does nothing', () => {
+test('where there is somewhere to go forward (home to Wardrobe), a swipe left past a third of the screen goes there', () => {
+  const { seen, fire } = screen({ canGoBack: () => false, canGoForward: () => true });
+  swipe(fire, [[280, 302], [220, 305], [160, 306]], { from: [300, 300] });
+  assert.equal(seen.forwards, 1);
+  assert.equal(seen.backs, 0);
+  assert.deepEqual(seen.drags, [-20, -80, -140]);
+  assert.deepEqual(seen.releases, [true]);
+});
+
+test('a quick flick left goes forward too, and a short slow one slides back', () => {
+  const flick = screen({ canGoForward: () => true });
+  swipe(flick.fire, [[285, 300], [265, 300], [245, 300]], { from: [300, 300], step: 20 });
+  assert.equal(flick.seen.forwards, 1);
+
+  const slow = screen({ canGoForward: () => true });
+  swipe(slow.fire, [[280, 300], [240, 300]], { from: [300, 300] });
+  assert.equal(slow.seen.forwards, 0);
+  assert.deepEqual(slow.seen.releases, [false]);
+});
+
+test('the screen never slides past where it started, whichever way it goes', () => {
+  const right = screen();
+  swipe(right.fire, [[100, 300], [10, 300]]);
+  assert.deepEqual(right.seen.drags, [60, 0]);
+
+  const left = screen({ canGoBack: () => false, canGoForward: () => true });
+  swipe(left.fire, [[240, 300], [330, 300]], { from: [300, 300] });
+  assert.deepEqual(left.seen.drags, [-60, 0]);
+});
+
+test('a swipe left with nowhere forward does nothing', () => {
   const { seen, fire } = screen();
   swipe(fire, [[250, 300], [60, 300]], { from: [300, 300] });
   assert.equal(seen.backs, 0);
