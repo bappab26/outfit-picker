@@ -878,72 +878,92 @@ const SCREENS = {
   shop: renderShopScreen,
 };
 
-// Swiping right does what Back does (swipe.js), on the screens that have it, but never while a
-// big photo is open. The screen and the one Back goes to (`to`) move side by side with her
-// finger, like a phone's home screen pages.
+// Swiping (swipe.js) right does what Back does, on the screens that have it, and left on the home
+// screen does what the Wardrobe button does. The screen and the one it goes to (`to`) move side
+// by side with her finger, like a phone's home screen pages.
 const BACKS = {
-  label: { actions: labelActions, to: () => (state.label.mode === 'new' ? 'home' : 'wardrobe') },
-  wardrobe: { actions: wardrobeActions, to: () => 'home' },
-  worn: { actions: calendarActions, to: () => 'wardrobe' },
-  stats: { actions: statsActions, to: () => 'wardrobe' },
-  shop: { actions: shopActions, to: () => 'wardrobe' },
+  label: { go: labelActions.back, to: () => (state.label.mode === 'new' ? 'home' : 'wardrobe') },
+  wardrobe: { go: wardrobeActions.back, to: () => 'home' },
+  worn: { go: calendarActions.back, to: () => 'wardrobe' },
+  stats: { go: statsActions.back, to: () => 'wardrobe' },
+  shop: { go: shopActions.back, to: () => 'wardrobe' },
+};
+const FORWARDS = {
+  home: { go: homeActions.openWardrobe, to: () => 'wardrobe' },
 };
 // How long the screens take to slide the rest of the way when she lets go (css/app.css).
 const SLIDE_MS = 200;
-// The screen Back goes to, during a swipe: { layer, screen }.
-let behind = null;
+// The screen a swipe goes to, beside the app: { layer, screen, side }, `side` being -1 on the
+// left (going back) or 1 on the right (going forward).
+let beside = null;
+
+// Where a swipe right (way 1) or left (way -1) goes from the screen now, or null. Never while a
+// big photo or the birthday card is open, nor forward while she renames the app (the Wardrobe
+// button is hidden then).
+function swipeTarget(way) {
+  const target = (way > 0 ? BACKS : FORWARDS)[state.screen];
+  if (!target || root.querySelector('.zoom-panel') || (way < 0 && state.renaming)) return null;
+  return target;
+}
+
+// What a swipe right (way 1) or left (way -1) does, or null.
+function swipeAction(way) {
+  const target = swipeTarget(way);
+  // Home beside has its outfits picked already: going back keeps them, as she saw them.
+  if (target && beside?.screen === 'home') return () => show('home');
+  return target?.go ?? null;
+}
 
 watchSwipes(root, {
-  backAction() {
-    const back = BACKS[state.screen];
-    if (!back || root.querySelector('.zoom-panel')) return null;
-    // Home behind has its outfits picked already: going back keeps them, as she saw them.
-    return behind?.screen === 'home' ? () => show('home') : back.actions.back;
-  },
+  backAction: () => swipeAction(1),
+  forwardAction: () => swipeAction(-1),
   width: () => root.clientWidth,
   drag(px) {
-    behind ??= drawBehind(BACKS[state.screen].to());
+    beside ??= drawBeside(Math.sign(px));
+    root.classList.remove('screen-in'); // a fade-in under way would hold the screen still
     document.body.classList.add('swiping');
     slide(px);
     getSelection()?.removeAllRanges(); // a mouse drag would select text
   },
-  // Both slide the rest of the way, on to the screen behind or back into place. Then Back draws
-  // the screen behind in the app, right where it shows, and the layer goes.
-  release(back) {
+  // Both slide the rest of the way, on to the screen beside or back into place. Then the action
+  // draws that screen in the app, right where it shows, and the layer goes.
+  release(go) {
     document.body.classList.add('swipe-settling');
-    slide(back ? root.clientWidth : 0);
+    slide(go ? -beside.side * root.clientWidth : 0);
     setTimeout(() => {
-      if (back) {
-        back();
+      if (go) {
+        go();
         root.classList.remove('screen-in'); // already in view: no fade
       }
       document.body.classList.remove('swiping', 'swipe-settling'); // first, so nothing slides
       root.style.transform = '';
-      behind.layer.remove();
-      behind = null;
+      beside.layer.remove();
+      beside = null;
     }, SLIDE_MS);
   },
 });
 
-// Moves the screen px to the right, and the one behind along with it, just to its left.
+// Moves the screen px sideways, and the one beside along with it, edge to edge.
 function slide(px) {
   root.style.transform = `translateX(${px}px)`;
-  behind.layer.style.transform = `translateX(${px - root.clientWidth}px)`;
+  beside.layer.style.transform = `translateX(${px + beside.side * root.clientWidth}px)`;
 }
 
-// Draws `screen` as Back would show it, in a layer behind the app that can't be tapped.
-function drawBehind(screen) {
+// Draws the screen a swipe right (way 1) or left (way -1) goes to, as it will show, in a layer
+// beside the app that can't be tapped.
+function drawBeside(way) {
+  const screen = swipeTarget(way).to();
   if (screen === 'home') recompute(); // as goHome does
   const saved = { screen: state.screen };
   for (const key of Object.keys(NEW_SCREEN)) saved[key] = state[key];
   Object.assign(state, NEW_SCREEN, { screen });
-  const layer = h('div', { class: 'swipe-behind', 'aria-hidden': 'true', inert: true });
+  const layer = h('div', { class: 'swipe-beside', 'aria-hidden': 'true', inert: true });
   const current = screenRoot;
   drawScreen(layer);
   screenRoot = current;
   Object.assign(state, saved);
   root.before(layer);
-  return { layer, screen };
+  return { layer, screen, side: -way };
 }
 
 // Evil mode or the angel look (eggs.js) colors every screen, and the phone's top bar.
@@ -955,7 +975,7 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
 }
 
-// Draws the current screen into `into`: the app, or the layer behind a swipe. False if the
+// Draws the current screen into `into`: the app, or the layer beside a swipe. False if the
 // screen changed while being drawn, and was drawn again (renderLabelScreen).
 function drawScreen(into) {
   const content = h('div', { class: 'screen' });
